@@ -2,12 +2,23 @@
 # -*- coding: UTF-8 -*-
 import os
 import abc, json, time
+import threading
+import traceback
 import my_utils, tmdb_api, tvdb_api, tgbot
 import log
 import sender
 from sender import Sender
 
 from datetime import datetime
+
+# 消息缓冲字典，key为 SeriesId_SeasonId，value为缓冲数据
+_episode_buffer = {}
+# 缓冲锁，确保线程安全
+_buffer_lock = threading.Lock()
+# 定时器字典，key为 SeriesId_SeasonId，value为Timer对象
+_buffer_timers = {}
+# 缓冲超时时间（秒）
+BUFFER_TIMEOUT = 10
 
 
 class IMedia(abc.ABC):
@@ -315,6 +326,111 @@ def jellyfin_msg_preprocess(msg):
         return original_msg
 
 
+def _get_buffer_key(emby_media_info):
+    """获取缓冲字典的key，格式为 SeriesId_SeasonId"""
+    item = emby_media_info["Item"]
+    # Emby消息中有SeriesId和SeasonId
+    if "SeriesId" in item and "SeasonId" in item:
+        return f"{item['SeriesId']}_{item['SeasonId']}"
+    # Jellyfin消息中没有SeriesId和SeasonId，使用SeriesName和SeasonNumber
+    elif "SeriesName" in item and "ParentIndexNumber" in item:
+        series_name = item["SeriesName"]
+        season_num = item["ParentIndexNumber"]
+        return f"{series_name}_{season_num}"
+    else:
+        # 如果都没有，使用SeriesName和当前时间戳作为fallback
+        series_name = item.get("SeriesName", "unknown")
+        return f"{series_name}_{int(time.time())}"
+
+
+def _process_buffered_episodes(buffer_key):
+    """处理缓冲中的剧集消息"""
+    with _buffer_lock:
+        if buffer_key not in _episode_buffer:
+            return
+        
+        buffer_data = _episode_buffer[buffer_key]
+        episodes = buffer_data["episodes"]
+        
+        # 清理定时器和缓冲
+        if buffer_key in _buffer_timers:
+            timer = _buffer_timers[buffer_key]
+            if timer.is_alive():
+                timer.cancel()
+            del _buffer_timers[buffer_key]
+        del _episode_buffer[buffer_key]
+    
+    # 在锁外处理消息，避免长时间持有锁
+    if len(episodes) >= 2:
+        # 整合发送
+        _send_aggregated_episodes(episodes, buffer_data["first_msg"])
+    else:
+        # 单独发送
+        for episode_data in episodes:
+            try:
+                md = episode_data["media"]
+                md.send_caption()
+            except Exception as e:
+                log.logger.error(f"Error sending episode: {e}")
+                log.logger.error(traceback.format_exc())
+
+
+def _send_aggregated_episodes(episodes, first_msg):
+    """发送整合后的剧集消息"""
+    try:
+        # 使用第一条消息作为基础
+        first_episode = episodes[0]["media"]
+        
+        # 收集所有集数
+        episode_numbers = sorted([ep["media"].info_["Series"] for ep in episodes])
+        min_episode = min(episode_numbers)
+        max_episode = max(episode_numbers)
+        total_episodes = len(episode_numbers)
+        
+        # 获取剧集基本信息（使用第一条消息的数据）
+        aggregated_detail = first_episode.media_detail_.copy()
+        
+        # 添加整合信息
+        aggregated_detail["is_aggregated"] = True
+        aggregated_detail["tv_episode_min"] = min_episode
+        aggregated_detail["tv_episode_max"] = max_episode
+        aggregated_detail["tv_episode_total"] = total_episodes
+        aggregated_detail["tv_episode_list"] = episode_numbers
+        
+        # 发送整合消息
+        sender.Sender.send_media_details(aggregated_detail)
+        log.logger.info(f"Aggregated message sent: {first_episode.info_['Name']} Season {first_episode.info_['Season']} Episodes {min_episode}-{max_episode} (Total: {total_episodes})")
+    except Exception as e:
+        log.logger.error(f"Error sending aggregated episodes: {e}")
+        log.logger.error(traceback.format_exc())
+
+
+def _add_to_buffer(emby_media_info, media_obj):
+    """将Episode消息添加到缓冲"""
+    buffer_key = _get_buffer_key(emby_media_info)
+    
+    with _buffer_lock:
+        if buffer_key not in _episode_buffer:
+            # 创建新的缓冲项
+            _episode_buffer[buffer_key] = {
+                "episodes": [],
+                "first_msg": emby_media_info,
+                "first_time": time.time()
+            }
+            # 创建定时器，10秒后处理
+            timer = threading.Timer(BUFFER_TIMEOUT, _process_buffered_episodes, args=(buffer_key,))
+            timer.start()
+            _buffer_timers[buffer_key] = timer
+        
+        # 添加到缓冲
+        _episode_buffer[buffer_key]["episodes"].append({
+            "media": media_obj,
+            "emby_info": emby_media_info
+        })
+        
+        log.logger.debug(f"Episode added to buffer: {buffer_key}, total episodes: {len(_episode_buffer[buffer_key]['episodes'])}")
+
+
 def process_media(emby_media_info):
     emby_media_info = jellyfin_msg_preprocess(emby_media_info)
     if not emby_media_info:
@@ -329,12 +445,17 @@ def process_media(emby_media_info):
             )
 
         return
+    
     try:
         md = create_media(emby_media_info)
         md.parse_info(emby_media_info)
         md.get_details()
-        md.send_caption()
+        
+        # 如果是Episode，添加到缓冲；如果是Movie，立即发送
+        if emby_media_info["Item"]["Type"] == "Episode":
+            _add_to_buffer(emby_media_info, md)
+        else:
+            md.send_caption()
+            log.logger.info(f"Message processing completed: {emby_media_info['Title']}")
     except Exception as e:
         raise e
-    else:
-        log.logger.info(f"Message processing completed: {emby_media_info['Title']}")
