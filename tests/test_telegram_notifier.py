@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from emby_notifier.constants import WELCOME_CONTENT
 from emby_notifier.domain.media import AggregatedMediaDetail, MediaDetail, MediaTechnicalInfo
 from emby_notifier.notifiers.telegram import TelegramNotifier
@@ -97,7 +99,7 @@ def test_send_movie_uses_photo_with_movie_caption():
     notifier.send_media(movie_detail())
 
     assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w342/poster.jpg"
-    assert client.photos[0]["show_caption_above_media"] is True
+    assert client.photos[0]["show_caption_above_media"] is False
     assert "#影视更新" not in client.photos[0]["caption"]
     assert "#Home_Server" not in client.photos[0]["caption"]
     assert "🎬 电影入库" in client.photos[0]["caption"]
@@ -111,6 +113,19 @@ def test_send_movie_uses_photo_with_movie_caption():
     assert "💾 大小：18.6 GB" in client.photos[0]["caption"]
     assert "评分" not in client.photos[0]["caption"]
     assert "⭐" not in client.photos[0]["caption"]
+
+
+def test_send_movie_falls_back_to_message_without_image():
+    client = FakeTelegramClient()
+    notifier = TelegramNotifier(client)
+    detail = replace(movie_detail(), media_poster=None, media_backdrop=None, media_still=None)
+
+    notifier.send_media(detail)
+
+    assert client.photos == []
+    assert len(client.messages) == 1
+    assert "🎬 电影入库" in client.messages[0]
+    assert "🎞️ 片名： *Dune* (2021)" in client.messages[0]
 
 
 def test_send_episode_includes_season_episode_text():
@@ -192,3 +207,22 @@ def test_send_aggregated_episode_falls_back_to_range_without_tmdb_total():
     notifier.send_aggregated_media(aggregated)
 
     assert "📌 已更新至 第1季 第2-4集 共3集" in client.photos[0]["caption"]
+
+
+def test_send_aggregated_episode_falls_back_to_message_without_image():
+    client = FakeTelegramClient()
+    notifier = TelegramNotifier(client)
+    aggregated = AggregatedMediaDetail(
+        detail=replace(episode_detail(), media_poster=None, media_backdrop=None, media_still=None),
+        tv_episode_min=2,
+        tv_episode_max=4,
+        tv_episode_total=3,
+        tv_episode_list=(2, 3, 4),
+    )
+
+    notifier.send_aggregated_media(aggregated)
+
+    assert client.photos == []
+    assert len(client.messages) == 1
+    assert "📺 剧集入库" in client.messages[0]
+    assert "📌 更新进度：4/40" in client.messages[0]

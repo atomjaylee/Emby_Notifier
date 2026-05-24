@@ -33,7 +33,7 @@ class TelegramNotifier:
 
     def send_media(self, media: MediaDetail) -> None:
         caption = self._build_caption(media)
-        self.client.send_photo(caption, _preview_image(media), show_caption_above_media=True)
+        self._send_media_message(caption, media)
 
     def send_aggregated_media(self, media: AggregatedMediaDetail) -> None:
         caption = self._build_caption(
@@ -42,7 +42,14 @@ class TelegramNotifier:
             title=media.detail.media_name,
             approximate_size=True,
         )
-        self.client.send_photo(caption, _preview_image(media.detail), show_caption_above_media=True)
+        self._send_media_message(caption, media.detail)
+
+    def _send_media_message(self, caption: str, media: MediaDetail) -> None:
+        photo = _preview_image(media)
+        if photo:
+            self.client.send_photo(caption, photo, show_caption_above_media=False)
+        else:
+            self.client.send_message(caption)
 
     def _build_caption(
         self,
@@ -102,8 +109,9 @@ def _format_size(size_gb: float) -> str:
     return f"{text} GB"
 
 
-def _preview_image(media: MediaDetail) -> str:
-    return _compact_tmdb_image(media.media_poster or media.media_still or media.media_backdrop)
+def _preview_image(media: MediaDetail) -> str | None:
+    image = media.media_poster or media.media_still or media.media_backdrop
+    return _compact_tmdb_image(image) if image else None
 
 
 def _compact_tmdb_image(url: str) -> str:
