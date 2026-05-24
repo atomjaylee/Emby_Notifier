@@ -30,6 +30,9 @@ class FakeTMDB:
             "still_path": None,
         }
 
+    def get_tv_details(self, tmdb_id):
+        return {"number_of_seasons": 2}
+
     def get_tv_season_details(self, tmdb_id, season_number):
         return {
             "air_date": "2023-07-14",
@@ -75,3 +78,4 @@ def test_enrich_episode_uses_tmdb_search_and_falls_back_to_season_data():
     assert detail.media_rel == "2023-07-14"
     assert detail.media_still == "https://image.tmdb.org/t/p/w500/season.jpg"
     assert detail.tv_season_episode_count == 40
+    assert detail.tv_total_seasons == 2

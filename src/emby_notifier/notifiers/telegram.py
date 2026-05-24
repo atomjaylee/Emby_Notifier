@@ -121,7 +121,12 @@ def _aggregated_episode_text(media: AggregatedMediaDetail) -> str:
             and media.tv_episode_max >= season_total
             and media.tv_episode_total >= season_total
         ):
-            return f"📌 已完结 · 全{season_total}集\n"
+            season_text = (
+                f"第{media.detail.tv_season}季"
+                if (media.detail.tv_total_seasons or 0) > 1 and media.detail.tv_season is not None
+                else ""
+            )
+            return f"📌 {season_text}已完结 · 全{season_total}集\n"
         return f"📌 更新进度：{min(media.tv_episode_max, season_total)}/{season_total}\n"
 
     return (

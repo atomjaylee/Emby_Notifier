@@ -28,6 +28,7 @@ class MediaDetail:
     tv_season: int | None = None
     tv_episode: int | None = None
     tv_season_episode_count: int | None = None
+    tv_total_seasons: int | None = None
     tv_episode_name: str | None = None
     technical_info: MediaTechnicalInfo | None = None
 

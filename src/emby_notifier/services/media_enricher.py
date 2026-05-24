@@ -39,6 +39,7 @@ class MediaEnricher:
         season_number = item.season_number or 0
         episode_number = item.episode_number or 0
         details = self.tmdb.get_tv_episode_details(tmdb_id, season_number, episode_number)
+        tv_details = self.tmdb.get_tv_details(tmdb_id)
         season_details = None
 
         air_date = details.get("air_date")
@@ -68,6 +69,7 @@ class MediaEnricher:
             tv_season=details.get("season_number", season_number),
             tv_episode=details.get("episode_number", episode_number),
             tv_season_episode_count=season_episode_count,
+            tv_total_seasons=_int_or_none(tv_details.get("number_of_seasons")),
             tv_episode_name=details.get("name", ""),
         )
 
@@ -93,5 +95,14 @@ def _season_episode_count(season_details: dict) -> int | None:
         return None
     try:
         return int(count)
+    except (TypeError, ValueError):
+        return None
+
+
+def _int_or_none(value) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
     except (TypeError, ValueError):
         return None

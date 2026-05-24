@@ -37,6 +37,9 @@ class TMDBClient:
     def get_movie_details(self, tmdb_id: str | int) -> dict:
         return self._get(f"/movie/{tmdb_id}", {"language": "zh-CN"})
 
+    def get_tv_details(self, tmdb_id: str | int) -> dict:
+        return self._get(f"/tv/{tmdb_id}", {"language": "zh-CN"})
+
     def get_tv_episode_details(self, tmdb_id: str | int, season_number: int, episode_number: int) -> dict:
         return self._get(
             f"/tv/{tmdb_id}/season/{season_number}/episode/{episode_number}",

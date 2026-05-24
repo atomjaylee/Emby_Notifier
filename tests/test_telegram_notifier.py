@@ -37,7 +37,7 @@ def movie_detail():
     )
 
 
-def episode_detail(total_episodes=40):
+def episode_detail(total_episodes=40, total_seasons=1, season=1):
     return MediaDetail(
         server_type="Emby",
         server_name="Home",
@@ -50,9 +50,10 @@ def episode_detail(total_episodes=40):
         media_tmdburl="https://www.themoviedb.org/tv/93740?language=zh-CN",
         media_poster="https://image.tmdb.org/t/p/w500/poster.jpg",
         media_still="https://image.tmdb.org/t/p/w500/still.jpg",
-        tv_season=1,
+        tv_season=season,
         tv_episode=2,
         tv_season_episode_count=total_episodes,
+        tv_total_seasons=total_seasons,
         tv_episode_name="Preparing to Live",
         technical_info=MediaTechnicalInfo(
             quality="4K",
@@ -154,6 +155,22 @@ def test_send_aggregated_episode_shows_completed_when_full_season_arrives():
 
     assert "📌 已完结 · 全40集" in client.photos[0]["caption"]
     assert "1/40" not in client.photos[0]["caption"]
+
+
+def test_send_aggregated_episode_includes_season_when_multi_season_show_completed():
+    client = FakeTelegramClient()
+    notifier = TelegramNotifier(client)
+    aggregated = AggregatedMediaDetail(
+        detail=episode_detail(total_seasons=3, season=2),
+        tv_episode_min=1,
+        tv_episode_max=40,
+        tv_episode_total=40,
+        tv_episode_list=tuple(range(1, 41)),
+    )
+
+    notifier.send_aggregated_media(aggregated)
+
+    assert "📌 第2季已完结 · 全40集" in client.photos[0]["caption"]
 
 
 def test_send_aggregated_episode_falls_back_to_range_without_tmdb_total():
