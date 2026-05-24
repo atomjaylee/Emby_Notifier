@@ -74,6 +74,31 @@ def test_emby_technical_enricher_prefers_special_chinese_subtitle():
     assert info.size_gb == 3.42
 
 
+def test_emby_technical_enricher_does_not_treat_ass_format_as_special_subtitle():
+    item = {
+        "Path": "/media/AI.S01E05.mkv",
+        "MediaSources": [
+            {
+                "Size": 3578537805,
+                "MediaStreams": [
+                    {"Type": "Video", "Width": 1920, "Height": 1080, "VideoRange": "SDR"},
+                    {
+                        "Type": "Subtitle",
+                        "Language": "chi",
+                        "Codec": "ass",
+                        "DisplayTitle": "Chinese Simplified (默认 ASS)",
+                        "Title": "chs",
+                    },
+                ],
+            }
+        ],
+    }
+
+    info = EmbyTechnicalEnricher(FakeEmbyClient(item)).get_info("episode-5")
+
+    assert info.subtitle == "简中"
+
+
 def test_emby_technical_enricher_falls_back_to_tmdb_id_lookup():
     item = {
         "Path": "/media/[ADWeb] Happening.2021.2160p.HDR.mkv",

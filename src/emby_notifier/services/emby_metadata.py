@@ -108,8 +108,7 @@ def _is_chinese_subtitle(stream: dict) -> bool:
 
 def _is_special_subtitle(stream: dict) -> bool:
     text = _stream_text(stream)
-    codec = str(stream.get("Codec", "")).lower()
-    return codec in {"ass", "ssa"} or any(token in text for token in ("特效", "ass", "ssa"))
+    return any(token in text for token in ("特效", "特效字幕", "effect", "effects"))
 
 
 def _chinese_language_label(stream: dict) -> str:
