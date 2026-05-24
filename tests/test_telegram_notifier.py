@@ -11,8 +11,12 @@ class FakeTelegramClient:
     def send_message(self, text):
         self.messages.append(text)
 
-    def send_photo(self, caption, photo):
-        self.photos.append({"caption": caption, "photo": photo})
+    def send_photo(self, caption, photo, show_caption_above_media=False):
+        self.photos.append({
+            "caption": caption,
+            "photo": photo,
+            "show_caption_above_media": show_caption_above_media,
+        })
 
 
 def movie_detail():
@@ -93,6 +97,7 @@ def test_send_movie_uses_photo_with_movie_caption():
     notifier.send_media(movie_detail())
 
     assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w500/backdrop.jpg"
+    assert client.photos[0]["show_caption_above_media"] is True
     assert "#影视更新" not in client.photos[0]["caption"]
     assert "#Home_Server" not in client.photos[0]["caption"]
     assert "🎬 电影入库" in client.photos[0]["caption"]

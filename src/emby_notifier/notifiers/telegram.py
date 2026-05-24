@@ -32,7 +32,7 @@ class TelegramNotifier:
 
     def send_media(self, media: MediaDetail) -> None:
         caption = self._build_caption(media)
-        self.client.send_photo(caption, _preview_image(media))
+        self.client.send_photo(caption, _preview_image(media), show_caption_above_media=True)
 
     def send_aggregated_media(self, media: AggregatedMediaDetail) -> None:
         caption = self._build_caption(
@@ -41,7 +41,7 @@ class TelegramNotifier:
             title=media.detail.media_name,
             approximate_size=True,
         )
-        self.client.send_photo(caption, _preview_image(media.detail))
+        self.client.send_photo(caption, _preview_image(media.detail), show_caption_above_media=True)
 
     def _build_caption(
         self,

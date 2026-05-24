@@ -30,7 +30,7 @@ class TelegramClient:
             },
         )
 
-    def send_photo(self, caption: str, photo: str) -> None:
+    def send_photo(self, caption: str, photo: str, show_caption_above_media: bool = False) -> None:
         self._post(
             "sendPhoto",
             {
@@ -38,6 +38,7 @@ class TelegramClient:
                 "photo": photo,
                 "caption": caption,
                 "parse_mode": "Markdown",
+                "show_caption_above_media": show_caption_above_media,
             },
         )
 
