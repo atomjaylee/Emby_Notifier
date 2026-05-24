@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 
 from emby_notifier.domain.media import AggregatedMediaDetail, MediaDetail
@@ -32,7 +33,7 @@ class TelegramNotifier:
 
     def send_media(self, media: MediaDetail) -> None:
         caption = self._build_caption(media)
-        self.client.send_photo(caption, media.media_poster)
+        self.client.send_photo(caption, _preview_image(media))
 
     def send_aggregated_media(self, media: AggregatedMediaDetail) -> None:
         caption = self._build_caption(
@@ -41,7 +42,7 @@ class TelegramNotifier:
             title=media.detail.media_name,
             approximate_size=True,
         )
-        self.client.send_photo(caption, media.detail.media_poster)
+        self.client.send_photo(caption, _preview_image(media.detail))
 
     def _build_caption(
         self,
@@ -68,14 +69,13 @@ class TelegramNotifier:
         year = media.media_rel[0:4] if media.media_rel else "Unknown"
 
         return (
-            f"#影视更新 #{escape_telegram_markdown(media.server_name)}\n"
+            f"#影视更新 #{_hashtag_value(media.server_name)}\n"
             f"[{media_type}]\n"
             f"片名： *{escape_telegram_markdown(title)}* ({year})\n"
             f"{episode_text}"
             f"{self._technical_text(media, approximate_size=approximate_size)}"
             f"评分： {media.media_rating}\n\n"
             f"上映日期： {media.media_rel}\n\n"
-            f"内容简介： {escape_telegram_markdown(media.media_intro)}\n\n"
             f"相关链接： [TMDB]({media.media_tmdburl})\n"
         )
 
@@ -104,3 +104,14 @@ class TelegramNotifier:
 def _format_size(size_gb: float) -> str:
     text = f"{size_gb:.2f}".rstrip("0").rstrip(".")
     return f"{text} GB"
+
+
+def _preview_image(media: MediaDetail) -> str:
+    return media.media_still or media.media_backdrop or media.media_poster
+
+
+def _hashtag_value(value: str) -> str:
+    normalized = re.sub(r"\s+", "_", value.strip())
+    normalized = re.sub(r"[^\w]", "_", normalized, flags=re.UNICODE)
+    normalized = re.sub(r"_+", "_", normalized).strip("_")
+    return normalized or "Emby"
