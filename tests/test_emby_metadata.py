@@ -21,8 +21,8 @@ class FakeFallbackEmbyClient:
         self.item_ids.append(item_id)
         raise RuntimeError("not found")
 
-    def find_item_by_tmdb_id(self, tmdb_id):
-        self.tmdb_ids.append(tmdb_id)
+    def find_item_by_tmdb_id(self, tmdb_id, preferred_item_id=None):
+        self.tmdb_ids.append((tmdb_id, preferred_item_id))
         return self.item
 
 
@@ -93,8 +93,27 @@ def test_emby_technical_enricher_falls_back_to_tmdb_id_lookup():
     info = EmbyTechnicalEnricher(client).get_info("420180", tmdb_id="749643")
 
     assert client.item_ids == ["420180"]
-    assert client.tmdb_ids == ["749643"]
+    assert client.tmdb_ids == [("749643", "420180")]
     assert info.quality == "4K"
     assert info.dynamic_range == "HDR10"
     assert info.release_group == "ADWeb"
     assert info.size_gb == 8
+
+
+def test_emby_technical_enricher_extracts_release_group_from_remux_filename():
+    item = {
+        "Path": "/media/movie/正发生.Happening (2021) 1080p.BluRay.AVC.DTS-HD MA 5.1.REMUX.CHD.mkv.strm",
+        "MediaSources": [
+            {
+                "Size": 29760310186,
+                "Path": "http://127.0.0.1:8123/正发生.Happening (2021) 1080p.BluRay.AVC.DTS-HD MA 5.1.REMUX.CHD.mkv?id=abc",
+                "MediaStreams": [
+                    {"Type": "Video", "Width": 1920, "Height": 1080, "VideoRange": "SDR"},
+                ],
+            }
+        ],
+    }
+
+    info = EmbyTechnicalEnricher(FakeEmbyClient(item)).get_info("420180")
+
+    assert info.release_group == "CHD"

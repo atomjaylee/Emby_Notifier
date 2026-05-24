@@ -3,6 +3,9 @@ from __future__ import annotations
 import requests
 
 
+MEDIA_FIELDS = "MediaSources,Path,ProviderIds"
+
+
 class EmbyClientError(RuntimeError):
     pass
 
@@ -15,13 +18,21 @@ class EmbyClient:
         self.session = requests.Session()
 
     def get_item(self, item_id: str) -> dict:
-        return self._get_json(
-            f"/emby/Items/{item_id}",
-            {"api_key": self.api_key},
+        data = self._get_json(
+            "/emby/Items",
+            {
+                "api_key": self.api_key,
+                "Ids": item_id,
+                "Fields": MEDIA_FIELDS,
+            },
             f"item {item_id}",
         )
+        items = data.get("Items") or []
+        if not items:
+            raise EmbyClientError(f"Emby item not found for item {item_id}")
+        return items[0]
 
-    def find_item_by_tmdb_id(self, tmdb_id: str) -> dict:
+    def find_item_by_tmdb_id(self, tmdb_id: str, preferred_item_id: str | None = None) -> dict:
         data = self._get_json(
             "/emby/Items",
             {
@@ -29,12 +40,17 @@ class EmbyClient:
                 "Recursive": "true",
                 "IncludeItemTypes": "Movie,Episode",
                 "AnyProviderIdEquals": f"tmdb.{tmdb_id}",
+                "Fields": MEDIA_FIELDS,
             },
             f"TMDB id {tmdb_id}",
         )
         items = data.get("Items") or []
         if not items:
             raise EmbyClientError(f"Emby item not found for TMDB id {tmdb_id}")
+        if preferred_item_id is not None:
+            for item in items:
+                if str(item.get("Id")) == str(preferred_item_id):
+                    return item
         return items[0]
 
     def _get_json(self, path: str, params: dict, label: str) -> dict:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 import os
 import re
+from urllib.parse import unquote, urlparse
 
 from emby_notifier.domain.media import MediaDetail, MediaTechnicalInfo
 
@@ -42,7 +43,7 @@ class EmbyTechnicalEnricher:
         except Exception:
             if not tmdb_id or not hasattr(self.emby_client, "find_item_by_tmdb_id"):
                 raise
-            return self.emby_client.find_item_by_tmdb_id(tmdb_id)
+            return self.emby_client.find_item_by_tmdb_id(tmdb_id, preferred_item_id=item_id)
 
 
 def _first_media_source(item: dict) -> dict:
@@ -128,8 +129,14 @@ def _stream_text(stream: dict) -> str:
 
 
 def _release_group(path: str) -> str | None:
-    filename = os.path.basename(path)
+    filename = _filename_from_path(path)
     stem, _ = os.path.splitext(filename)
+    while True:
+        next_stem, ext = os.path.splitext(stem)
+        if ext.lower() not in {".mkv", ".mp4", ".avi", ".mov", ".ts"}:
+            break
+        stem = next_stem
+
     bracket = re.match(r"^\[([^\]]+)\]", filename)
     if bracket:
         return bracket.group(1)
@@ -137,7 +144,17 @@ def _release_group(path: str) -> str | None:
     dash = re.search(r"-([A-Za-z0-9][A-Za-z0-9._]{1,20})$", stem)
     if dash:
         return dash.group(1).replace(".", "")
+
+    remux = re.search(r"(?:^|[ ._-])remux[ ._-]+([A-Za-z0-9][A-Za-z0-9._-]{1,20})$", stem, re.IGNORECASE)
+    if remux:
+        return remux.group(1).replace(".", "").replace("_", "").replace("-", "")
     return None
+
+
+def _filename_from_path(path: str) -> str:
+    parsed = urlparse(path)
+    parsed_path = parsed.path if parsed.scheme else path
+    return unquote(os.path.basename(parsed_path))
 
 
 def _size_gb(size: int | str | None) -> float | None:
