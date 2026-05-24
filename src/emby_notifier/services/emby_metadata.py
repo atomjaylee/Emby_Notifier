@@ -28,7 +28,7 @@ class EmbyTechnicalEnricher:
         return MediaTechnicalInfo(
             quality=_quality(video_stream),
             dynamic_range=_dynamic_range(video_stream),
-            subtitle=_subtitle_label(subtitle_streams),
+            subtitle=_subtitle_label(media_source, subtitle_streams),
             size_gb=_size_gb(media_source.get("Size") or item.get("Size")),
         )
 
@@ -91,7 +91,10 @@ def _dynamic_range(video_stream: dict) -> str | None:
     return None
 
 
-def _subtitle_label(subtitle_streams: list[dict]) -> str | None:
+def _subtitle_label(media_source: dict, subtitle_streams: list[dict]) -> str | None:
+    if not subtitle_streams:
+        return "硬字幕" if _has_hard_subtitle_hint(media_source) else "无独立字幕"
+
     chinese = [stream for stream in subtitle_streams if _is_chinese_subtitle(stream)]
     if not chinese:
         return None
@@ -109,6 +112,14 @@ def _is_chinese_subtitle(stream: dict) -> bool:
 def _is_special_subtitle(stream: dict) -> bool:
     text = _stream_text(stream)
     return any(token in text for token in ("特效", "特效字幕", "effect", "effects"))
+
+
+def _has_hard_subtitle_hint(media_source: dict) -> bool:
+    text = _stream_text({
+        key: media_source.get(key, "")
+        for key in ("Name", "Path", "Container", "DisplayTitle")
+    })
+    return any(token in text for token in ("硬字幕", "hardsub", "hard sub", "内嵌中字", "内嵌字幕", "中字"))
 
 
 def _chinese_language_label(stream: dict) -> str:

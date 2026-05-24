@@ -99,6 +99,43 @@ def test_emby_technical_enricher_does_not_treat_ass_format_as_special_subtitle()
     assert info.subtitle == "简中"
 
 
+def test_emby_technical_enricher_marks_hard_subtitle_only_with_explicit_hint():
+    item = {
+        "Path": "/media/Movie.2024.1080p.HardSub.mkv",
+        "MediaSources": [
+            {
+                "Name": "Movie.2024.1080p.内嵌中字.mkv",
+                "MediaStreams": [
+                    {"Type": "Video", "Width": 1920, "Height": 1080, "VideoRange": "SDR"},
+                ],
+            }
+        ],
+    }
+
+    info = EmbyTechnicalEnricher(FakeEmbyClient(item)).get_info("movie-2")
+
+    assert info.subtitle == "硬字幕"
+
+
+def test_emby_technical_enricher_reports_no_independent_subtitle_without_subtitle_streams():
+    item = {
+        "Path": "/media/Dont.Say.a.Word.2001.2160p.WEB-DL.H265.mkv",
+        "MediaSources": [
+            {
+                "Name": "Dont.Say.a.Word.2001.2160p.WEB-DL.H265.mkv",
+                "MediaStreams": [
+                    {"Type": "Video", "Width": 3840, "Height": 1632, "VideoRange": "SDR"},
+                    {"Type": "Audio", "Language": "chi", "DisplayTitle": "Chinese Simplified DTS 5.1"},
+                ],
+            }
+        ],
+    }
+
+    info = EmbyTechnicalEnricher(FakeEmbyClient(item)).get_info("movie-3")
+
+    assert info.subtitle == "无独立字幕"
+
+
 def test_emby_technical_enricher_falls_back_to_tmdb_id_lookup():
     item = {
         "Path": "/media/[ADWeb] Happening.2021.2160p.HDR.mkv",
