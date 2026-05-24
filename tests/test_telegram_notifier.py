@@ -102,6 +102,8 @@ def test_send_movie_uses_photo_with_movie_caption():
     assert "💬 字幕：简中特效" in client.photos[0]["caption"]
     assert "小组" not in client.photos[0]["caption"]
     assert "💾 大小：18.6 GB" in client.photos[0]["caption"]
+    assert "评分" not in client.photos[0]["caption"]
+    assert "⭐" not in client.photos[0]["caption"]
 
 
 def test_send_episode_includes_season_episode_text():
@@ -115,6 +117,7 @@ def test_send_episode_includes_season_episode_text():
     assert "📌 已更新至 第1季 第2集" in client.photos[0]["caption"]
     assert "Preparing to Live" in client.photos[0]["caption"]
     assert "🧩 画质：4K · HDR10" in client.photos[0]["caption"]
+    assert "评分" not in client.photos[0]["caption"]
 
 
 def test_send_aggregated_episode_uses_range_text():
