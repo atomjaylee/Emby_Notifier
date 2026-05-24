@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import replace
-import os
-import re
-from urllib.parse import unquote, urlparse
 
 from emby_notifier.domain.media import MediaDetail, MediaTechnicalInfo
 
@@ -27,13 +24,11 @@ class EmbyTechnicalEnricher:
         media_source = _first_media_source(item)
         video_stream = _first_stream(media_source, "Video")
         subtitle_streams = _streams(media_source, "Subtitle")
-        path = media_source.get("Path") or item.get("Path") or ""
 
         return MediaTechnicalInfo(
             quality=_quality(video_stream),
             dynamic_range=_dynamic_range(video_stream),
             subtitle=_subtitle_label(subtitle_streams),
-            release_group=_release_group(path),
             size_gb=_size_gb(media_source.get("Size") or item.get("Size")),
         )
 
@@ -126,35 +121,6 @@ def _chinese_language_label(stream: dict) -> str:
 
 def _stream_text(stream: dict) -> str:
     return " ".join(str(value) for value in stream.values()).lower()
-
-
-def _release_group(path: str) -> str | None:
-    filename = _filename_from_path(path)
-    stem, _ = os.path.splitext(filename)
-    while True:
-        next_stem, ext = os.path.splitext(stem)
-        if ext.lower() not in {".mkv", ".mp4", ".avi", ".mov", ".ts"}:
-            break
-        stem = next_stem
-
-    bracket = re.match(r"^\[([^\]]+)\]", filename)
-    if bracket:
-        return bracket.group(1)
-
-    dash = re.search(r"-([A-Za-z0-9][A-Za-z0-9._]{1,20})$", stem)
-    if dash:
-        return dash.group(1).replace(".", "")
-
-    remux = re.search(r"(?:^|[ ._-])remux[ ._-]+([A-Za-z0-9][A-Za-z0-9._-]{1,20})$", stem, re.IGNORECASE)
-    if remux:
-        return remux.group(1).replace(".", "").replace("_", "").replace("-", "")
-    return None
-
-
-def _filename_from_path(path: str) -> str:
-    parsed = urlparse(path)
-    parsed_path = parsed.path if parsed.scheme else path
-    return unquote(os.path.basename(parsed_path))
 
 
 def _size_gb(size: int | str | None) -> float | None:

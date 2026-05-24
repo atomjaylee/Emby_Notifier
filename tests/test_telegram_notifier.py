@@ -32,7 +32,6 @@ def movie_detail():
             quality="4K",
             dynamic_range="Dolby Vision",
             subtitle="简中特效",
-            release_group="ADWeb",
             size_gb=18.6,
         ),
     )
@@ -58,7 +57,6 @@ def episode_detail():
             quality="4K",
             dynamic_range="HDR10",
             subtitle="简中特效",
-            release_group="HHWEB",
             size_gb=3.42,
         ),
     )
@@ -102,7 +100,7 @@ def test_send_movie_uses_photo_with_movie_caption():
     assert "🎞️ 片名： *Dune* (2021)" in client.photos[0]["caption"]
     assert "🧩 画质：4K · Dolby Vision" in client.photos[0]["caption"]
     assert "💬 字幕：简中特效" in client.photos[0]["caption"]
-    assert "🏷️ 小组：ADWeb" in client.photos[0]["caption"]
+    assert "小组" not in client.photos[0]["caption"]
     assert "💾 大小：18.6 GB" in client.photos[0]["caption"]
 
 

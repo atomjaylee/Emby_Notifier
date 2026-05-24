@@ -88,8 +88,6 @@ class TelegramNotifier:
             lines.append(f"🧩 画质：{quality}")
         if info.subtitle:
             lines.append(f"💬 字幕：{info.subtitle}")
-        if info.release_group:
-            lines.append(f"🏷️ 小组：{escape_telegram_markdown(info.release_group)}")
         if info.size_gb is not None:
             if approximate_size:
                 lines.append(f"💾 大小：约 {_format_size(info.size_gb)}/集")

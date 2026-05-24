@@ -8,7 +8,6 @@ class MediaTechnicalInfo:
     quality: str | None = None
     dynamic_range: str | None = None
     subtitle: str | None = None
-    release_group: str | None = None
     size_gb: float | None = None
 
 
