@@ -1,0 +1,18 @@
+[project]
+name = "emby-notifier"
+version = "4.2.0"
+requires-python = ">=3.11"
+dependencies = [
+  "aiohttp>=3.9",
+  "colorlog>=6.8",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

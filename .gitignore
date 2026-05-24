@@ -5,5 +5,4 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-**/test*
 **/_tmp*
