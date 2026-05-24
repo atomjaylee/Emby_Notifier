@@ -62,6 +62,6 @@ def load_config() -> AppConfig:
         log_path=os.getenv("LOG_PATH", "/var/tmp/emby_notifier_tg"),
         host=os.getenv("HOST", "0.0.0.0"),
         port=_int_env("PORT", 8000),
-        episode_buffer_timeout=_int_env("EPISODE_BUFFER_TIMEOUT", 10),
+        episode_buffer_timeout=_int_env("EPISODE_BUFFER_TIMEOUT", 180),
         request_timeout=_int_env("REQUEST_TIMEOUT", 8),
     )

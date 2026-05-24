@@ -36,4 +36,4 @@ def test_load_config_uses_defaults(monkeypatch):
     assert config.tmdb_image_domain == "https://image.tmdb.org"
     assert config.host == "0.0.0.0"
     assert config.port == 8000
-    assert config.episode_buffer_timeout == 10
+    assert config.episode_buffer_timeout == 180
