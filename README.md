@@ -1,99 +1,55 @@
 # Emby Notifier
 
-> 这是另一个项目 [watchdog_for_Emby](https://github.com/Ccccx159/watchdog_for_Emby/tree/main) 的最新优化版本，取消了 nfo 文件的监视依赖，该版本不再需要手动设置媒体库路径，对通过网盘挂载生成的媒体库更加友好~
+Emby Notifier 是一个基于 Emby Server Webhooks 的媒体入库通知服务。它接收 Emby 的新媒体事件，使用 TMDB 补全影片或剧集详情，然后通过 Telegram Bot 推送到指定聊天或频道。
 
-## 重大更新！！！
+当前版本只保留：
 
-v4.0.0 版本现已支持 [bark](https://bark.day.app/#/) 进行推送
+- Emby Server webhook
+- Telegram Bot 通知
+- TMDB 元数据检索
+- 可选 TVDB 辅助剧集匹配
+- ARM64 Docker 镜像构建
 
-v3.0.0 版本现已支持 **企业微信** 进行推送，媒体信息通过图文卡片进行推送，仅支持 **企业微信** app 接收【<mark>注： 微信中的企业微信插件无法接收此类消息</mark>】
+已移除 Jellyfin、企业微信和 Bark 支持，以减少运行路径和配置分支。
 
-v2.0.0 版本现已支持 Jellyfin Server！！！详细配置请参看章节 [Jellyfin Server 设置](#jellyfin-server-设置)
+## 版本要求
 
-## Emby Server 版本 (重要！！！)
+建议使用 **Emby Server 4.8.0.80 或更新版本**。
 
+本项目基于 Emby Server 的 Webhooks/通知能力工作。旧版 Emby 可能需要 Emby Premiere 才能使用 Webhooks。
 
-<font color=red>**4.8.0.80 及更新版本的 Emby Server！！！**</font>
+## 环境变量
 
-本项目是基于 Emby Server 官方插件 Webhooks 实现的，在 4.8.0.80 版本以前需要激活 Emby Premiere 才能使用 Webhooks 插件。
+服务默认监听 `0.0.0.0:8000`。
 
-在 4.8.0.80 版本，Webhooks 被集成到控制台 “通知” 功能中，免费用户也可使用，因此建议使用本项目的朋友更新 Emby Server 到指定版本。
+| 参数 | 要求 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `TMDB_API_TOKEN` | 必须 | 无 | TMDB API Read Access Token |
+| `TG_BOT_TOKEN` | 必须 | 无 | Telegram Bot Token |
+| `TG_CHAT_ID` | 必须 | 无 | Telegram chat/channel ID |
+| `TVDB_API_KEY` | 可选 | 无 | TVDB API Key，用于部分剧集 TMDB 匹配 |
+| `TMDB_IMAGE_DOMAIN` | 可选 | `https://image.tmdb.org` | TMDB 图片域名，可替换为代理域名 |
+| `LOG_LEVEL` | 可选 | `INFO` | 日志等级：`DEBUG`、`INFO`、`WARNING` |
+| `LOG_EXPORT` | 可选 | `False` | 是否输出日志文件 |
+| `LOG_PATH` | 可选 | `/var/tmp/emby_notifier_tg` | 日志文件目录 |
+| `HOST` | 可选 | `0.0.0.0` | HTTP 服务监听地址 |
+| `PORT` | 可选 | `8000` | HTTP 服务监听端口 |
+| `EPISODE_BUFFER_TIMEOUT` | 可选 | `10` | 剧集聚合等待秒数 |
+| `REQUEST_TIMEOUT` | 可选 | `8` | 外部 API 请求超时时间 |
 
-<mark>需要注意的是，群晖套件中心的 Emby Server 最新在线版本为 4.7.14.0，因此需要 Emby 官方网站下载相应平台的安装包进行手动安装。</mark>
+## Docker Run
 
-## Contributors
-
-[![Contributors](http://contrib.nn.ci/api?repo=Ccccx159/Emby_Notifier)](https://github.com/Ccccx159/Emby_Notifier/graphs/contributors)
-
-## 修订版本
-
-
-| 版本 | 日期 | 修订说明 |
-| ----- | ----- | ----- |
-| v4.1.0 | 2025.04.10 | <li>1. 微信增加图文消息类型支持；</li><li>2. 优化 TVDB_API_KEY 未配置时仍然查询TVDB导致报错的问题；</li><li>3. 修复 BARK_DEVICE_KEYS 未配置时启动报错的问题</li><li>4. 修改readme中TG变量说明</li> |
-| v4.0.1 | 2025.02.05 | <li>1. 环境校验补充增加 bark 参数检查；</li><li>2. 修复仅配置 bark sender 时配置校验失败问题；</li><li>3. 修改 wechat token 缓存文件命名，并修改 git ignore 文件</li> |
-| v4.0.0 | 2025.01.31 | <li>1. 新增 bark 推送支持，详细配置请参看 [bark 官网](https://bark.day.app/#/)；</li> |
-| v3.1.0 | 2025.01.28 | <li>1. 新增 TMDB_IMAGE_DOMAIN 环境变量， TMDB图片地址，默认`https://image.tmdb.org`，可配置为其它中转代理以加速TMDB图片显示，如：`https://static-mdb.v.geilijiasu.com`</li>|
-| v3.0.5 | 2024.12.26 | <li>1. 取消 tg 相关参数的强校验，仅设置时进行可用性校验</li><li>2. 修复TMDB部分剧集的 air_date 参数为导致的推送失败问题</li>|
-| v3.0.4 | 2024.10.02 | <li>1. 增加兼容性，当“still_path”获取失败时由海报“poster”代替</li>|
-| v3.0.3 | 2024.09.21 | <li>1. 修复同时配置 tg 和微信时，由于 tg 推送失败导致微信不推送的问题</li>|
-| v3.0.2 | 2024.08.18 | <li>1. 修复 emby 推送的媒体信息缺少 server url 导致字段缺失报错，默认填充 <https://emby.media>；</li>|
-| v3.0.1 | 2024.08.02 | <li>1. 去除企业微信"推送用户"参数的校验，默认推送给虽有用户；</li><li>2. 修复测试消息推送失败的问题</li><li>3. 新增 aarch64 dockerfile 支持</li>|
-| v3.0.0 | 2024.07.29 | <li>1. 新增企业微信支持；</li>|
-| v2.2.3 | 2024.06.12 | <li>1. 兼容高版本 Emby Server 新增媒体事件通知的处理，包括修复 PremiereDate 和 剧集的 episode tmdb id 等兼容性导致的消息推送失败问题；</li><li>2. 修复 tvdb_api 中一处日志等级错误；</li>|
-| v2.2.2 | 2024.06.11 | <li>1. 修复 tvdb id 环境变量为空时校验失败的问题；</li><li>2. 修复 chat id 被设置为用户 id 导致的校验失败问题</li> |
-| v2.2.1 | 2024.05.30 | <li>1. 修复非首季剧集搜索失败问题。TMDB /search/tv 接口参数 "first_air_date_year" 特指 “首季” 的初次发布年份，后续季发布年份不同于首季时，使用该字段出现搜索失败的情况，将搜索参数修改为 "year" 修复该问题。</li> |
-| v2.2.0 | 2024.05.24 | <li>1. 增加必填参数有效性校验，基于 TMDB authorization 和 tgbot getMe method 等方法进行认证，通过后才启动服务</li><li>2. 将 TVDB_API_KEY 修改为 “可选”，兼容性修改。使用过程中出现 Server 的通知消息中无 ProviderIds 信息，tvdb api 请求返回 502 等情况，导致服务不够稳定，为了提高兼容性，将 TVDB_API_KEY 设置为可选配置，若配置，则对于有 tvdb_id 且无 tmdb_id 的影片可以有效提高信息检索准确性</li><li>3. 优化部分 Requests 请求的异常处理</li> |
-| v2.1.0 | 2024.05.22 | <li>1. 新增测试 message 推送，当Emby Server发送测试通知时，将消息推送到对应 tg chat。仅输出日志容易导致使用者误解为无响应</li><li>2. 修改 README 中对 TMDB_API_TOKEN 的中文解释为 "API 读访问令牌"</li><li>3. tgbot sendmessage 方法新增异常信息打印</li><li>4. 修复日志文件默认路径错误，并当设置LOG_EXPORT=True时，将欢迎信息同步写入日志文件</li> |
-| v2.0.0 | 2024.05.17 | <li><mark>1. 支持 Jellyfin Server</mark></li><li>2. 优化部分日志信息，方便调试和跟踪问题</li><li>3. 优化逻辑，当无法匹配id时，默认使用第一个搜索结果，避免因为id缺失导致无结果（对于较少部分id缺失的媒体文件，由于缺少匹配和校验机制，可能出现推送结果与实际影片不符现象）</li> |
-| v1.0.4 | 2024.05.16 | <li>1. 推送消息新增 “服务器名称” tag，当Notifier服务被应用于多个 server 时，易于区分</li><li>2. tgbot 推送失败时，增加日志输出 api 返回内容</li> |
-| v1.0.3 | 2024.05.08 | <li>1. 修复环境变量校验中的一处环境变量名称笔误，该错误会导致无法正常启动服务</li><li>2. dockerfile 增加环境变量PYTHONUNBUFFERED=1，避免因日志缓存无法即时获取信息</li> |
-| v1.0.2 | 2024.05.08 | <li>1. 修复当 LOG_LEVEL 未设置时，默认等级 INFO 不生效，仍然维持 WARNING 等级的错误；</li><li>2. 新增 welcome 日志，输出项目名称，作者，版本等信息；</li><li>3. 新增环境变量校验，当必选项未设置时，将不会启动服务;</li> |
-| v1.0.1 | 2024.04.30 | <li>1. 修改默认日志等级为 INFO，同步修改docker-compose模板和README；</li><li>2. 优化错误日志逻辑；</li><li>3. 新增部分 info 日志，成功处理时给出适当响应；</li><li>4. 封装搜索和校验 TMDB ID 部分代码，减少重复</li> |
-| v1.0.0 | 2024.04.29 | <li>新增项目</li> |
-
-
-## 简介
-
-**Emby Notifier** 是一个基于 Emby Server Webhooks 实现的自动通知工具。Emby Server 通过 Webhooks 插件，可以在影片刮削完成后，自动推送事件到指定的 URL。本项目通过监听 Emby Server 推送的 Webhooks 事件，获取影片的基本信息，通过 TMDB 的 API 查询影片的详细信息，然后通过 Telegram Bot 推送至指定频道。
-
-## 环境变量和服务端口
-
-端口：8000
-
-<mark>Telegram、WeChat、Bark 三种通知方式至少配置一种。</mark>
-
-| 参数 | 要求 | 说明 |
-| -- | -- | -- |
-| TMDB_API_TOKEN | 必须 | TMDB API 读访问令牌（API Read Access Token） |
-| TVDB_API_KEY | 可选 | Your TVDB API Key |
-| TG_BOT_TOKEN | 可选 | Your Telegram Bot Token |
-| TG_CHAT_ID | 可选 | Your Telegram Channel's Chat ID |
-| LOG_LEVEL | 可选 | 日志等级 [DEBUG, INFO, WARNING] 三个等级，默认 INFO|
-| LOG_EXPORT | 可选 | 日志写文件标志 [True, False] 是否将日志输出到文件，默认 False|
-| LOG_PATH | 可选 | 日志文件保存路径，默认 /var/tmp/emby_notifier_tg |
-| WECHAT_CORP_ID | 可选 | （企业微信）企业 id |
-| WECHAT_CORP_SECRET | 可选 | （企业微信）应用的凭证秘钥 |
-| WECHAT_AGENT_ID | 可选 | （企业微信）应用 agentid |
-| WECHAT_USER_ID | 可选 | （企业微信）用户 id，默认为“@all” |
-| WECHAT_MSG_TYPE | 可选 | （企业微信）消息类型，支持图文类型（news）与模板卡片（news_notice），默认模板卡片 |
-| BARK_SERVER | 可选 | bark 服务地址，默认为公共服务器：https://api.day.app |
-| BARK_DEVICE_KEYS | 可选 | bark 设备密钥，支持设置多个设备密钥，用逗号分隔。e.g. "abcdefqweqwe,qwewqeqeqw,qweqweqweq,qweqweqwe" |
-
-## docker Run
-
-~~~shell
+```bash
 docker run -d --name=emby-notifier-tg --restart=unless-stopped \
-    -e TMDB_API_TOKEN=Your_TMDB_API_Token \
-    -e TVDB_API_KEY=Your_TVDB_API_Key \
-    -e TG_BOT_TOKEN=Your_Telegram_Bot_Token \
-    -e TG_CHAT_ID=Your_Telegram_Chat_ID \
-    -p 8000:8000 \
-    b1gfac3c4t/emby_notifier_tg:latest
-  
-~~~
+  -e TMDB_API_TOKEN=Your_TMDB_API_Token \
+  -e TG_BOT_TOKEN=Your_Telegram_Bot_Token \
+  -e TG_CHAT_ID=Your_Telegram_Chat_ID \
+  -e TVDB_API_KEY=Your_TVDB_API_Key \
+  -p 8000:8000 \
+  b1gfac3c4t/emby_notifier_tg:latest
+```
 
-## docker-compose
+## Docker Compose
 
 ```yaml
 version: '3'
@@ -105,110 +61,76 @@ services:
     image: b1gfac3c4t/emby_notifier_tg:latest
     environment:
       - TZ=Asia/Shanghai
-      # 这里所有的环境变量都不要使用引号
-      # 必填参数
       - TMDB_API_TOKEN=<Your TMDB API Token>
-      # 可选参数
-      - TG_BOT_TOKEN=<Your Telegram Bot Tokne>
-      - TG_CHAT_ID=<Your Telegram Channel's Chat ID>
+      - TG_BOT_TOKEN=<Your Telegram Bot Token>
+      - TG_CHAT_ID=<Your Telegram Chat ID>
       - TVDB_API_KEY=<Your TVDB API Key>
-      - LOG_LEVEL=INFO # [DEBUG, INFO, WARNING] 三个等级，默认 INFO
-      - LOG_EXPORT=False # [True, False0] 是否将日志输出到文件，默认 False
-      - LOG_PATH=/var/tmp/emby_notifier_tg/ # 默认 /var/tmp/emby_notifier_tg/
-      - WECHAT_CORP_ID=xxxxx      # 企业微信：企业 id
-      - WECHAT_CORP_SECRET=xxxxxx # 企业微信：应用凭证秘钥
-      - WECHAT_AGENT_ID=xxxxx # 企业微信：应用 agentid
-      - WECHAT_USER_ID=xxxxxx # 企业微信：用户 id，不设置时默认为 “@all”
-      - WECHAT_MSG_TYPE=news_notice  # 企业微信：消息类型，支持 news/news_notice，不设置默认为 news_notice
+      - LOG_LEVEL=INFO
+      - LOG_EXPORT=False
+      - LOG_PATH=/var/tmp/emby_notifier_tg/
     network_mode: "bridge"
     ports:
       - "8000:8000"
     restart: unless-stopped
 ```
 
+启动：
+
 ```bash
 docker-compose up -d
 ```
 
+## ARM 镜像
+
+项目的 Dockerfile 使用 ARM64 Python 基础镜像，GitHub Actions 只构建 `linux/arm64`。
+
+本地构建：
+
+```bash
+docker buildx build --platform linux/arm64 -f dockerfile -t emby-notifier:arm64-test --load .
+```
+
 ## Emby Server 设置
 
-1. 打开 Emby Server 控制台，点击左侧菜单栏的 “设置” -> “通知” -> “添加 Webhooks”
+1. 打开 Emby Server 控制台，进入 “设置” -> “通知”。
+2. 添加 Webhooks 通知。
+3. URL 填写 Notifier 地址，例如 `http://192.168.1.100:8000`。
+4. 数据类型选择 `application/json`。
+5. 发送测试通知，确认 Telegram 能收到测试消息。
+6. 勾选媒体库的新媒体添加事件并保存。
 
-    ![添加通知](./doc/添加通知.png)
+参考截图仍保留在 `doc/` 目录中。
 
-    ![添加Webhooks](./doc/添加webhooks.png)
+## 行为说明
 
-2. 在弹出的对话框中，填写 Webhooks 的 URL，例如：`http://192.168.1.100:8000`，选择数据类型为 `application/json`
+- 只处理 `library.new` 媒体新增事件。
+- 只支持 `Movie` 和 `Episode`。
+- `system.notificationtest` 会发送 Telegram 测试消息。
+- Emby 消息没有 Server URL 时默认使用 `https://emby.media`。
+- 多个剧集事件在 `EPISODE_BUFFER_TIMEOUT` 时间窗口内到达时，会合并为一条剧集更新通知。
+- 单条消息处理失败不会终止队列 worker。
 
-    ![配置Webhooks](./doc/配置notifier.png)
+## 本地开发
 
-3. 点击 “发送测试通知” 按钮，观察 Notifier 的日志输出，如果输出了测试通知的信息，说明 Webhooks 设置成功
+运行测试：
 
-    ![接收测试事件通知](./doc/接受测试消息.png)
+```bash
+PYTHONPATH=src pytest -v
+```
 
-    Notifier 日志中出现以下信息，说明 Webhooks 设置成功
-    ```shell
-     [WARNING] : Unsupported event type: system.notificationtest
-    ```
+语法检查：
 
-4. 选择通知事件：媒体库 -> 新媒体已添加，点击保存
-
-    ![选择通知事件](./doc/选择事件.png)
-
-## Jellyfin Server 设置
-
-1. 打开 Jellyfin Server 控制台，点击左侧菜单栏的 “插件”，点击 “Webhooks” 插件进行配置
-
-    ![Jellyfin Webhooks](./doc/设置webhook.png)
-
-2. 添加类型为 "Generic Destination" 的 webhook
-
-    ![添加类型](./doc/选择generic_destination.png)
-
-3. 配置 Generic Destination
-  
-    ![配置Generic Destination](./doc/配置.png)
-
-4. 点击左侧 “通知”，进入通知配置界面
-
-    ![通知配置](./doc/通知设置.png)
-
-5. 启用通知
-
-    ![启用通知](./doc/启用通知.png)
-
-## 媒体信息检索流程
-
-![](./doc/Emby_Notifier.drawio.png)
-
+```bash
+python -m compileall src main.py
+```
 
 ## 局限性
 
-Emby Server 的新媒体添加事件的触发时机受限于对新增文件的监视方式和扫描媒体库的频率，如果 Emby Server 触发新媒体添加事件，则 Notifier 也就无法推送通知。
+Emby Server 的新媒体事件触发取决于媒体库扫描和文件监控机制。如果 Emby 没有触发 webhook，本服务不会主动扫描媒体库。
 
-## 效果展示
-
-### telegram
-
-电影：
-
-![](https://user-images.githubusercontent.com/35327600/209752390-4e45180b-d8cc-4378-bd98-c489638f7cb7.png)
-
-剧集：
-
-![](https://user-images.githubusercontent.com/35327600/209752275-bad230b0-97a7-47e5-9a77-081afae7d6cf.png)
-
-### 企业微信
-
-![](./doc/wechat_emby.jpg)
-
-![](./doc/wechat_jelly.jpg)
-
-### bark
-
-![](./doc/bark.jpg)
+当 Emby 事件缺少 TMDB/TVDB provider id 时，服务会使用 TMDB 搜索结果进行匹配；少数媒体可能出现匹配不准确。
 
 ## 参考文档
 
-+ tmdb api 文档：https://developers.themoviedb.org/3
-+ telegram bot api 文档：https://core.telegram.org/bots/api
+- [TMDB API 文档](https://developers.themoviedb.org/3)
+- [Telegram Bot API 文档](https://core.telegram.org/bots/api)
