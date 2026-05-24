@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 
 from emby_notifier.domain.media import AggregatedMediaDetail, MediaDetail
@@ -102,7 +103,11 @@ def _format_size(size_gb: float) -> str:
 
 
 def _preview_image(media: MediaDetail) -> str:
-    return media.media_still or media.media_backdrop or media.media_poster
+    return _compact_tmdb_image(media.media_poster or media.media_still or media.media_backdrop)
+
+
+def _compact_tmdb_image(url: str) -> str:
+    return re.sub(r"/t/p/[^/]+/", "/t/p/w342/", url, count=1)
 
 
 def _single_episode_text(media: MediaDetail) -> str:

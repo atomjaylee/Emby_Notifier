@@ -96,7 +96,7 @@ def test_send_movie_uses_photo_with_movie_caption():
 
     notifier.send_media(movie_detail())
 
-    assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w500/backdrop.jpg"
+    assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w342/poster.jpg"
     assert client.photos[0]["show_caption_above_media"] is True
     assert "#影视更新" not in client.photos[0]["caption"]
     assert "#Home_Server" not in client.photos[0]["caption"]
@@ -119,7 +119,7 @@ def test_send_episode_includes_season_episode_text():
 
     notifier.send_media(episode_detail())
 
-    assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w500/still.jpg"
+    assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w342/poster.jpg"
     assert "📺 剧集入库" in client.photos[0]["caption"]
     assert "📌 更新进度：2/40" in client.photos[0]["caption"]
     assert "Preparing to Live" in client.photos[0]["caption"]
