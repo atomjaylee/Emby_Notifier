@@ -22,6 +22,9 @@ class AppConfig:
     port: int
     episode_buffer_timeout: int
     request_timeout: int
+    emby_server_url: str | None
+    emby_api_key: str | None
+    emby_api_timeout: int
 
 
 def _required(name: str, errors: list[str]) -> str:
@@ -64,4 +67,14 @@ def load_config() -> AppConfig:
         port=_int_env("PORT", 8000),
         episode_buffer_timeout=_int_env("EPISODE_BUFFER_TIMEOUT", 180),
         request_timeout=_int_env("REQUEST_TIMEOUT", 8),
+        emby_server_url=_optional_url("EMBY_SERVER_URL"),
+        emby_api_key=os.getenv("EMBY_API_KEY") or None,
+        emby_api_timeout=_int_env("EMBY_API_TIMEOUT", 5),
     )
+
+
+def _optional_url(name: str) -> str | None:
+    value = os.getenv(name)
+    if not value:
+        return None
+    return value.rstrip("/")

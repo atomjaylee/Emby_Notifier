@@ -14,6 +14,15 @@ class FakeNotifier:
         self.aggregated.append(detail)
 
 
+class FakeTechnicalEnricher:
+    def __init__(self):
+        self.item_ids = []
+
+    def enrich(self, detail, item_id):
+        self.item_ids.append(item_id)
+        return detail
+
+
 class FakeTimer:
     instances = []
 
@@ -100,3 +109,21 @@ def test_add_resets_timer_for_same_episode_group():
     assert FakeTimer.instances[0].cancelled is True
     assert FakeTimer.instances[1].started is True
     assert FakeTimer.instances[1].timeout == 180
+
+
+def test_flush_multiple_episodes_enriches_only_representative_item():
+    notifier = FakeNotifier()
+    technical_enricher = FakeTechnicalEnricher()
+    buffer = EpisodeBuffer(
+        notifier,
+        timeout_seconds=30,
+        auto_start_timer=False,
+        technical_enricher=technical_enricher,
+    )
+
+    buffer.add("foundation_1", detail(2), 2, item_id="episode-2")
+    buffer.add("foundation_1", detail(3), 3, item_id="episode-3")
+    buffer.flush("foundation_1")
+
+    assert technical_enricher.item_ids == ["episode-2"]
+    assert len(notifier.aggregated) == 1

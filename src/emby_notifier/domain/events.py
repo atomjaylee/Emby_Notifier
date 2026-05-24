@@ -27,6 +27,7 @@ class MediaItem:
     name: str
     premiere_year: int
     provider_ids: dict[str, str]
+    item_id: str | None = None
     season_number: int | None = None
     episode_number: int | None = None
     series_id: str | None = None
@@ -102,6 +103,7 @@ def _parse_item(payload: dict, server: ServerInfo) -> MediaItem:
         name=name,
         premiere_year=parse_premiere_year(payload.get("PremiereDate"), server.version),
         provider_ids=dict(payload.get("ProviderIds", {})),
+        item_id=payload.get("Id"),
         season_number=payload.get("ParentIndexNumber"),
         episode_number=payload.get("IndexNumber"),
         series_id=payload.get("SeriesId"),

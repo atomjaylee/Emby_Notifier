@@ -9,6 +9,7 @@ def test_parse_movie_library_new_event():
         "Event": "library.new",
         "Item": {
             "Type": "Movie",
+            "Id": "movie-1",
             "Name": "Dune",
             "PremiereDate": "2021-09-15T00:00:00.0000000Z",
             "ProviderIds": {"Tmdb": "438631"},
@@ -21,6 +22,7 @@ def test_parse_movie_library_new_event():
     assert event.kind == EventKind.MEDIA_ADDED
     assert event.item.media_type == "Movie"
     assert event.item.name == "Dune"
+    assert event.item.item_id == "movie-1"
     assert event.item.premiere_year == 2021
     assert event.server.name == "Home"
     assert event.server.url == "https://emby.media"

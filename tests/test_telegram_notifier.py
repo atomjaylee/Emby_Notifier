@@ -1,5 +1,5 @@
 from emby_notifier.constants import WELCOME_CONTENT
-from emby_notifier.domain.media import AggregatedMediaDetail, MediaDetail
+from emby_notifier.domain.media import AggregatedMediaDetail, MediaDetail, MediaTechnicalInfo
 from emby_notifier.notifiers.telegram import TelegramNotifier
 
 
@@ -28,6 +28,13 @@ def movie_detail():
         media_tmdburl="https://www.themoviedb.org/movie/438631?language=zh-CN",
         media_poster="https://image.tmdb.org/t/p/w500/poster.jpg",
         media_backdrop="https://image.tmdb.org/t/p/w500/backdrop.jpg",
+        technical_info=MediaTechnicalInfo(
+            quality="4K",
+            dynamic_range="Dolby Vision",
+            subtitle="简中特效",
+            release_group="ADWeb",
+            size_gb=18.6,
+        ),
     )
 
 
@@ -47,6 +54,13 @@ def episode_detail():
         tv_season=1,
         tv_episode=2,
         tv_episode_name="Preparing to Live",
+        technical_info=MediaTechnicalInfo(
+            quality="4K",
+            dynamic_range="HDR10",
+            subtitle="简中特效",
+            release_group="HHWEB",
+            size_gb=3.42,
+        ),
     )
 
 
@@ -81,6 +95,10 @@ def test_send_movie_uses_photo_with_movie_caption():
     assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w500/poster.jpg"
     assert "[电影]" in client.photos[0]["caption"]
     assert "Dune" in client.photos[0]["caption"]
+    assert "画质：4K · Dolby Vision" in client.photos[0]["caption"]
+    assert "字幕：简中特效" in client.photos[0]["caption"]
+    assert "小组：ADWeb" in client.photos[0]["caption"]
+    assert "大小：18.6 GB" in client.photos[0]["caption"]
 
 
 def test_send_episode_includes_season_episode_text():
@@ -91,6 +109,7 @@ def test_send_episode_includes_season_episode_text():
 
     assert "已更新至 第1季 第2集" in client.photos[0]["caption"]
     assert "Preparing to Live" in client.photos[0]["caption"]
+    assert "画质：4K · HDR10" in client.photos[0]["caption"]
 
 
 def test_send_aggregated_episode_uses_range_text():
@@ -107,3 +126,4 @@ def test_send_aggregated_episode_uses_range_text():
     notifier.send_aggregated_media(aggregated)
 
     assert "第2-4集 共3集" in client.photos[0]["caption"]
+    assert "大小：约 3.42 GB/集" in client.photos[0]["caption"]
