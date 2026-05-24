@@ -1,6 +1,6 @@
 FROM arm64v8/python:3.11-alpine3.19
 
-LABEL maintainer="Xu@nCh3n"
+LABEL maintainer="atomjaylee"
 
 ENV TZ=Asia/Shanghai LANG=zh_CN.UTF-8 PYTHONUNBUFFERED=1
 
