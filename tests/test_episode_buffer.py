@@ -17,9 +17,11 @@ class FakeNotifier:
 class FakeTechnicalEnricher:
     def __init__(self):
         self.item_ids = []
+        self.tmdb_ids = []
 
-    def enrich(self, detail, item_id):
+    def enrich(self, detail, item_id, tmdb_id=None):
         self.item_ids.append(item_id)
+        self.tmdb_ids.append(tmdb_id)
         return detail
 
 
@@ -121,9 +123,10 @@ def test_flush_multiple_episodes_enriches_only_representative_item():
         technical_enricher=technical_enricher,
     )
 
-    buffer.add("foundation_1", detail(2), 2, item_id="episode-2")
-    buffer.add("foundation_1", detail(3), 3, item_id="episode-3")
+    buffer.add("foundation_1", detail(2), 2, item_id="episode-2", tmdb_id="93740")
+    buffer.add("foundation_1", detail(3), 3, item_id="episode-3", tmdb_id="93740")
     buffer.flush("foundation_1")
 
     assert technical_enricher.item_ids == ["episode-2"]
+    assert technical_enricher.tmdb_ids == ["93740"]
     assert len(notifier.aggregated) == 1

@@ -11,6 +11,21 @@ class FakeEmbyClient:
         return self.item
 
 
+class FakeFallbackEmbyClient:
+    def __init__(self, item):
+        self.item = item
+        self.item_ids = []
+        self.tmdb_ids = []
+
+    def get_item(self, item_id):
+        self.item_ids.append(item_id)
+        raise RuntimeError("not found")
+
+    def find_item_by_tmdb_id(self, tmdb_id):
+        self.tmdb_ids.append(tmdb_id)
+        return self.item
+
+
 def test_emby_technical_enricher_extracts_high_value_fields():
     item = {
         "Path": "/media/[ADWeb] Dune.2021.2160p.DV.HDR.mkv",
@@ -59,3 +74,27 @@ def test_emby_technical_enricher_prefers_special_chinese_subtitle():
     assert info.subtitle == "简中特效"
     assert info.release_group == "HHWEB"
     assert info.size_gb == 3.42
+
+
+def test_emby_technical_enricher_falls_back_to_tmdb_id_lookup():
+    item = {
+        "Path": "/media/[ADWeb] Happening.2021.2160p.HDR.mkv",
+        "MediaSources": [
+            {
+                "Size": 8589934592,
+                "MediaStreams": [
+                    {"Type": "Video", "Width": 3840, "Height": 2160, "VideoRange": "HDR10"},
+                ],
+            }
+        ],
+    }
+    client = FakeFallbackEmbyClient(item)
+
+    info = EmbyTechnicalEnricher(client).get_info("420180", tmdb_id="749643")
+
+    assert client.item_ids == ["420180"]
+    assert client.tmdb_ids == ["749643"]
+    assert info.quality == "4K"
+    assert info.dynamic_range == "HDR10"
+    assert info.release_group == "ADWeb"
+    assert info.size_gb == 8

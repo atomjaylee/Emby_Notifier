@@ -15,13 +15,36 @@ class EmbyClient:
         self.session = requests.Session()
 
     def get_item(self, item_id: str) -> dict:
+        return self._get_json(
+            f"/emby/Items/{item_id}",
+            {"api_key": self.api_key},
+            f"item {item_id}",
+        )
+
+    def find_item_by_tmdb_id(self, tmdb_id: str) -> dict:
+        data = self._get_json(
+            "/emby/Items",
+            {
+                "api_key": self.api_key,
+                "Recursive": "true",
+                "IncludeItemTypes": "Movie,Episode",
+                "AnyProviderIdEquals": f"tmdb.{tmdb_id}",
+            },
+            f"TMDB id {tmdb_id}",
+        )
+        items = data.get("Items") or []
+        if not items:
+            raise EmbyClientError(f"Emby item not found for TMDB id {tmdb_id}")
+        return items[0]
+
+    def _get_json(self, path: str, params: dict, label: str) -> dict:
         try:
             response = self.session.get(
-                f"{self.server_url}/emby/Items/{item_id}",
-                params={"api_key": self.api_key},
+                f"{self.server_url}{path}",
+                params=params,
                 timeout=self.timeout,
             )
             response.raise_for_status()
         except requests.RequestException as exc:
-            raise EmbyClientError(f"Emby item query failed for {item_id}: {exc}") from exc
+            raise EmbyClientError(f"Emby item query failed for {label}: {exc}") from exc
         return response.json()

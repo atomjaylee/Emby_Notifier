@@ -30,7 +30,7 @@ class FakeEnricher:
             media_rating=8.0,
             media_rel="2021-09-15",
             media_intro="intro",
-            media_tmdburl="tmdb",
+            media_tmdburl="https://www.themoviedb.org/movie/438631?language=zh-CN",
             media_poster="poster",
             tv_episode=item.episode_number,
             tv_season=item.season_number,
@@ -41,16 +41,18 @@ class FakeBuffer:
     def __init__(self):
         self.added = []
 
-    def add(self, buffer_key, detail, episode_number, item_id=None):
-        self.added.append((buffer_key, detail, episode_number, item_id))
+    def add(self, buffer_key, detail, episode_number, item_id=None, tmdb_id=None):
+        self.added.append((buffer_key, detail, episode_number, item_id, tmdb_id))
 
 
 class FakeTechnicalEnricher:
     def __init__(self):
         self.item_ids = []
+        self.tmdb_ids = []
 
-    def enrich(self, detail, item_id):
+    def enrich(self, detail, item_id, tmdb_id=None):
         self.item_ids.append(item_id)
+        self.tmdb_ids.append(tmdb_id)
         return detail
 
 
@@ -113,6 +115,7 @@ def test_processor_enriches_movie_technical_info_before_sending():
 
     assert result == "media"
     assert technical_enricher.item_ids == ["movie-1"]
+    assert technical_enricher.tmdb_ids == ["438631"]
 
 
 def test_processor_buffers_episode():
@@ -141,3 +144,4 @@ def test_processor_buffers_episode():
     assert buffer.added[0][0] == "series-1_season-1"
     assert buffer.added[0][2] == 2
     assert buffer.added[0][3] == "episode-2"
+    assert buffer.added[0][4] == "438631"

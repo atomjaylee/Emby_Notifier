@@ -12,17 +12,17 @@ class EmbyTechnicalEnricher:
         self.emby_client = emby_client
         self.logger = logger
 
-    def enrich(self, detail: MediaDetail, item_id: str) -> MediaDetail:
+    def enrich(self, detail: MediaDetail, item_id: str, tmdb_id: str | None = None) -> MediaDetail:
         try:
-            info = self.get_info(item_id)
+            info = self.get_info(item_id, tmdb_id=tmdb_id)
         except Exception as exc:
             if self.logger:
                 self.logger.warning(f"Unable to load Emby technical info for {item_id}: {exc}")
             return detail
         return replace(detail, technical_info=info)
 
-    def get_info(self, item_id: str) -> MediaTechnicalInfo:
-        item = self.emby_client.get_item(item_id)
+    def get_info(self, item_id: str, tmdb_id: str | None = None) -> MediaTechnicalInfo:
+        item = self._get_item(item_id, tmdb_id)
         media_source = _first_media_source(item)
         video_stream = _first_stream(media_source, "Video")
         subtitle_streams = _streams(media_source, "Subtitle")
@@ -35,6 +35,14 @@ class EmbyTechnicalEnricher:
             release_group=_release_group(path),
             size_gb=_size_gb(media_source.get("Size") or item.get("Size")),
         )
+
+    def _get_item(self, item_id: str, tmdb_id: str | None) -> dict:
+        try:
+            return self.emby_client.get_item(item_id)
+        except Exception:
+            if not tmdb_id or not hasattr(self.emby_client, "find_item_by_tmdb_id"):
+                raise
+            return self.emby_client.find_item_by_tmdb_id(tmdb_id)
 
 
 def _first_media_source(item: dict) -> dict:
