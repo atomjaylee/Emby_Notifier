@@ -13,7 +13,6 @@ services:
       - TG_BOT_TOKEN=<Your Telegram Bot Tokne>
       - TG_CHAT_ID=<Your Telegram Channel's Chat ID>
       # 可选参数
-      - TVDB_API_KEY=<Your TVDB API Key>
       - EMBY_SERVER_URL=http://Your_Emby_Server:8096
       - EMBY_API_KEY=<Your Emby API Key>
       - LOG_LEVEL=INFO # [DEBUG, INFO, WARNING] 三个等级，默认 INFO

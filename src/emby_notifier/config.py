@@ -13,7 +13,6 @@ class AppConfig:
     tmdb_api_token: str
     telegram_bot_token: str
     telegram_chat_id: str
-    tvdb_api_key: str | None
     tmdb_image_domain: str
     log_level: str
     log_export: bool
@@ -58,7 +57,6 @@ def load_config() -> AppConfig:
         tmdb_api_token=tmdb_api_token,
         telegram_bot_token=telegram_bot_token,
         telegram_chat_id=telegram_chat_id,
-        tvdb_api_key=os.getenv("TVDB_API_KEY") or None,
         tmdb_image_domain=os.getenv("TMDB_IMAGE_DOMAIN", "https://image.tmdb.org").rstrip("/"),
         log_level=os.getenv("LOG_LEVEL", "INFO"),
         log_export=os.getenv("LOG_EXPORT", "False") == "True",

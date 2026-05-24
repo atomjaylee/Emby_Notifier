@@ -5,7 +5,6 @@ import asyncio
 from emby_notifier.clients.telegram import TelegramClient
 from emby_notifier.clients.emby import EmbyClient
 from emby_notifier.clients.tmdb import TMDBClient
-from emby_notifier.clients.tvdb import TVDBClient
 from emby_notifier.config import load_config
 from emby_notifier.constants import WELCOME_CONTENT
 from emby_notifier.logging import configure_logger
@@ -28,11 +27,6 @@ async def async_main() -> None:
     )
     tmdb_client.validate()
 
-    tvdb_client = (
-        TVDBClient(config.tvdb_api_key, timeout=config.request_timeout)
-        if config.tvdb_api_key
-        else None
-    )
     telegram_client = TelegramClient(
         config.telegram_bot_token,
         config.telegram_chat_id,
@@ -55,7 +49,7 @@ async def async_main() -> None:
             logger=logger,
         )
 
-    enricher = MediaEnricher(tmdb_client, tvdb_client)
+    enricher = MediaEnricher(tmdb_client)
     episode_buffer = EpisodeBuffer(
         notifier,
         config.episode_buffer_timeout,

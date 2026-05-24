@@ -7,9 +7,8 @@ from emby_notifier.domain.media import MediaDetail
 
 
 class MediaEnricher:
-    def __init__(self, tmdb_client, tvdb_client=None):
+    def __init__(self, tmdb_client):
         self.tmdb = tmdb_client
-        self.tvdb = tvdb_client
 
     def enrich(self, item: MediaItem, server: ServerInfo) -> MediaDetail:
         if item.media_type == "Movie":
@@ -36,7 +35,7 @@ class MediaEnricher:
         )
 
     def _enrich_episode(self, item: MediaItem, server: ServerInfo) -> MediaDetail:
-        tmdb_id = self._find_episode_tmdb_id(item)
+        tmdb_id = self._find_tmdb_id(item)
         season_number = item.season_number or 0
         episode_number = item.episode_number or 0
         details = self.tmdb.get_tv_episode_details(tmdb_id, season_number, episode_number)
@@ -70,34 +69,10 @@ class MediaEnricher:
             tv_episode_name=details.get("name", ""),
         )
 
-    def _find_episode_tmdb_id(self, item: MediaItem) -> str:
-        provider_ids = dict(item.provider_ids)
-        if "Tvdb" in provider_ids and self.tvdb is not None:
-            provider_ids["Tvdb"] = str(self.tvdb.get_series_id_by_episode_id(provider_ids["Tvdb"]))
-
-        search_item = MediaItem(
-            media_type=item.media_type,
-            name=item.name,
-            premiere_year=item.premiere_year,
-            provider_ids=provider_ids,
-            season_number=item.season_number,
-            episode_number=item.episode_number,
-            series_id=item.series_id,
-            season_id=item.season_id,
-        )
-        return self._find_tmdb_id(search_item)
-
     def _find_tmdb_id(self, item: MediaItem) -> str:
         results = self.tmdb.search_media(item.media_type, item.name, item.premiere_year)
         if not results:
             raise ValueError(f"No TMDB results found for {item.name}")
-
-        tvdb_id = item.provider_ids.get("Tvdb")
-        if tvdb_id:
-            for result in results:
-                external_ids = self.tmdb.get_external_ids(item.media_type, result["id"])
-                if str(external_ids.get("tvdb_id")) == str(tvdb_id):
-                    return str(result["id"])
 
         return str(results[0]["id"])
 

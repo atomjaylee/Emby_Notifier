@@ -21,7 +21,6 @@ def test_load_config_uses_defaults(monkeypatch):
     monkeypatch.setenv("TMDB_API_TOKEN", "tmdb-token")
     monkeypatch.setenv("TG_BOT_TOKEN", "tg-token")
     monkeypatch.setenv("TG_CHAT_ID", "-100123")
-    monkeypatch.delenv("TVDB_API_KEY", raising=False)
     monkeypatch.delenv("TMDB_IMAGE_DOMAIN", raising=False)
     monkeypatch.delenv("HOST", raising=False)
     monkeypatch.delenv("PORT", raising=False)
@@ -35,7 +34,6 @@ def test_load_config_uses_defaults(monkeypatch):
     assert config.tmdb_api_token == "tmdb-token"
     assert config.telegram_bot_token == "tg-token"
     assert config.telegram_chat_id == "-100123"
-    assert config.tvdb_api_key is None
     assert config.tmdb_image_domain == "https://image.tmdb.org"
     assert config.host == "0.0.0.0"
     assert config.port == 8000

@@ -9,9 +9,6 @@ class FakeTMDB:
     def search_media(self, media_type, name, year):
         return [{"id": "93740", "original_name": name, "first_air_date": f"{year}-01-01"}]
 
-    def get_external_ids(self, media_type, tmdb_id):
-        return {"tvdb_id": 999}
-
     def get_movie_details(self, tmdb_id):
         return {
             "title": "Dune",
@@ -37,11 +34,6 @@ class FakeTMDB:
         return {"air_date": "2023-07-14", "poster_path": "/season.jpg"}
 
 
-class FakeTVDB:
-    def get_series_id_by_episode_id(self, episode_id):
-        return 999
-
-
 def server():
     return ServerInfo(name="Home", version="4.8.0.80", url="https://emby.media", server_type="Emby")
 
@@ -54,7 +46,7 @@ def test_enrich_movie_uses_existing_tmdb_id():
         provider_ids={"Tmdb": "438631"},
     )
 
-    detail = MediaEnricher(FakeTMDB(), FakeTVDB()).enrich(item, server())
+    detail = MediaEnricher(FakeTMDB()).enrich(item, server())
 
     assert detail.media_name == "Dune"
     assert detail.media_type == "Movie"
@@ -62,7 +54,7 @@ def test_enrich_movie_uses_existing_tmdb_id():
     assert detail.media_backdrop == "https://image.tmdb.org/t/p/w500/backdrop.jpg"
 
 
-def test_enrich_episode_uses_tvdb_and_falls_back_to_season_data():
+def test_enrich_episode_uses_tmdb_search_and_falls_back_to_season_data():
     item = MediaItem(
         media_type="Episode",
         name="Foundation",
@@ -72,7 +64,7 @@ def test_enrich_episode_uses_tvdb_and_falls_back_to_season_data():
         episode_number=2,
     )
 
-    detail = MediaEnricher(FakeTMDB(), FakeTVDB()).enrich(item, server())
+    detail = MediaEnricher(FakeTMDB()).enrich(item, server())
 
     assert detail.media_name == "Foundation"
     assert detail.media_type == "Episode"
