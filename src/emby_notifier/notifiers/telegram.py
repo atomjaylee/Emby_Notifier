@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import time
 
 from emby_notifier.domain.media import AggregatedMediaDetail, MediaDetail
@@ -38,7 +37,7 @@ class TelegramNotifier:
     def send_aggregated_media(self, media: AggregatedMediaDetail) -> None:
         caption = self._build_caption(
             media.detail,
-            f"已更新至 第{media.detail.tv_season}季 第{media.tv_episode_min}-{media.tv_episode_max}集 共{media.tv_episode_total}集\n",
+            f"📌 已更新至 第{media.detail.tv_season}季 第{media.tv_episode_min}-{media.tv_episode_max}集 共{media.tv_episode_total}集\n",
             title=media.detail.media_name,
             approximate_size=True,
         )
@@ -53,7 +52,7 @@ class TelegramNotifier:
     ) -> str:
         if episode_text is None:
             episode_text = (
-                f"已更新至 第{media.tv_season}季 第{media.tv_episode}集\n"
+                f"📌 已更新至 第{media.tv_season}季 第{media.tv_episode}集\n"
                 if media.media_type == "Episode"
                 else ""
             )
@@ -65,18 +64,17 @@ class TelegramNotifier:
                 else f"{media.media_name} {media.tv_episode_name or ''}".strip()
             )
 
-        media_type = "电影" if media.media_type == "Movie" else "剧集"
+        media_type = "🎬 电影入库" if media.media_type == "Movie" else "📺 剧集入库"
         year = media.media_rel[0:4] if media.media_rel else "Unknown"
 
         return (
-            f"#影视更新 #{_hashtag_value(media.server_name)}\n"
-            f"[{media_type}]\n"
-            f"片名： *{escape_telegram_markdown(title)}* ({year})\n"
+            f"{media_type}\n"
+            f"🎞️ 片名： *{escape_telegram_markdown(title)}* ({year})\n"
             f"{episode_text}"
             f"{self._technical_text(media, approximate_size=approximate_size)}"
-            f"评分： {media.media_rating}\n\n"
-            f"上映日期： {media.media_rel}\n\n"
-            f"相关链接： [TMDB]({media.media_tmdburl})\n"
+            f"⭐ 评分： {media.media_rating}\n"
+            f"📅 上映日期： {media.media_rel}\n"
+            f"🔗 相关链接： [TMDB]({media.media_tmdburl})\n"
         )
 
     def _technical_text(self, media: MediaDetail, approximate_size: bool) -> str:
@@ -87,16 +85,16 @@ class TelegramNotifier:
         lines = []
         quality = " · ".join(part for part in (info.quality, info.dynamic_range) if part)
         if quality:
-            lines.append(f"画质：{quality}")
+            lines.append(f"🧩 画质：{quality}")
         if info.subtitle:
-            lines.append(f"字幕：{info.subtitle}")
+            lines.append(f"💬 字幕：{info.subtitle}")
         if info.release_group:
-            lines.append(f"小组：{escape_telegram_markdown(info.release_group)}")
+            lines.append(f"🏷️ 小组：{escape_telegram_markdown(info.release_group)}")
         if info.size_gb is not None:
             if approximate_size:
-                lines.append(f"大小：约 {_format_size(info.size_gb)}/集")
+                lines.append(f"💾 大小：约 {_format_size(info.size_gb)}/集")
             else:
-                lines.append(f"大小：{_format_size(info.size_gb)}")
+                lines.append(f"💾 大小：{_format_size(info.size_gb)}")
 
         return "\n".join(lines) + ("\n" if lines else "")
 
@@ -108,10 +106,3 @@ def _format_size(size_gb: float) -> str:
 
 def _preview_image(media: MediaDetail) -> str:
     return media.media_still or media.media_backdrop or media.media_poster
-
-
-def _hashtag_value(value: str) -> str:
-    normalized = re.sub(r"\s+", "_", value.strip())
-    normalized = re.sub(r"[^\w]", "_", normalized, flags=re.UNICODE)
-    normalized = re.sub(r"_+", "_", normalized).strip("_")
-    return normalized or "Emby"

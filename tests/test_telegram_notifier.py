@@ -93,16 +93,17 @@ def test_send_movie_uses_photo_with_movie_caption():
     notifier.send_media(movie_detail())
 
     assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w500/backdrop.jpg"
-    assert "#Home_Server" in client.photos[0]["caption"]
-    assert "#Home\\_Server" not in client.photos[0]["caption"]
-    assert "[电影]" in client.photos[0]["caption"]
+    assert "#影视更新" not in client.photos[0]["caption"]
+    assert "#Home_Server" not in client.photos[0]["caption"]
+    assert "🎬 电影入库" in client.photos[0]["caption"]
     assert "Dune" in client.photos[0]["caption"]
     assert "内容简介" not in client.photos[0]["caption"]
     assert "Desert power." not in client.photos[0]["caption"]
-    assert "画质：4K · Dolby Vision" in client.photos[0]["caption"]
-    assert "字幕：简中特效" in client.photos[0]["caption"]
-    assert "小组：ADWeb" in client.photos[0]["caption"]
-    assert "大小：18.6 GB" in client.photos[0]["caption"]
+    assert "🎞️ 片名： *Dune* (2021)" in client.photos[0]["caption"]
+    assert "🧩 画质：4K · Dolby Vision" in client.photos[0]["caption"]
+    assert "💬 字幕：简中特效" in client.photos[0]["caption"]
+    assert "🏷️ 小组：ADWeb" in client.photos[0]["caption"]
+    assert "💾 大小：18.6 GB" in client.photos[0]["caption"]
 
 
 def test_send_episode_includes_season_episode_text():
@@ -112,9 +113,10 @@ def test_send_episode_includes_season_episode_text():
     notifier.send_media(episode_detail())
 
     assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w500/still.jpg"
-    assert "已更新至 第1季 第2集" in client.photos[0]["caption"]
+    assert "📺 剧集入库" in client.photos[0]["caption"]
+    assert "📌 已更新至 第1季 第2集" in client.photos[0]["caption"]
     assert "Preparing to Live" in client.photos[0]["caption"]
-    assert "画质：4K · HDR10" in client.photos[0]["caption"]
+    assert "🧩 画质：4K · HDR10" in client.photos[0]["caption"]
 
 
 def test_send_aggregated_episode_uses_range_text():
@@ -130,5 +132,5 @@ def test_send_aggregated_episode_uses_range_text():
 
     notifier.send_aggregated_media(aggregated)
 
-    assert "第2-4集 共3集" in client.photos[0]["caption"]
-    assert "大小：约 3.42 GB/集" in client.photos[0]["caption"]
+    assert "📌 已更新至 第1季 第2-4集 共3集" in client.photos[0]["caption"]
+    assert "💾 大小：约 3.42 GB/集" in client.photos[0]["caption"]
