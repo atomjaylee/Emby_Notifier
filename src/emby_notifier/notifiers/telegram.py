@@ -80,7 +80,6 @@ class TelegramNotifier:
             f"🎞️ 片名： *{escape_telegram_markdown(title)}* ({year})\n"
             f"{episode_text}"
             f"{self._technical_text(media, approximate_size=approximate_size)}"
-            f"📅 上映日期： {media.media_rel}\n"
             f"🔗 相关链接： [TMDB]({media.media_tmdburl})\n"
         )
 
