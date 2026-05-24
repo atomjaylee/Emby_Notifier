@@ -12,10 +12,12 @@ class TMDBClient:
         self.image_domain = image_domain.rstrip("/")
         self.timeout = timeout
         self.session = requests.Session()
-        self.headers = {
-            "accept": "application/json",
-            "Authorization": f"Bearer {api_token}",
-        }
+        self.headers = {"accept": "application/json"}
+        self.auth_params = {}
+        if _looks_like_v4_token(api_token):
+            self.headers["Authorization"] = f"Bearer {api_token}"
+        else:
+            self.auth_params["api_key"] = api_token
         self.base_url = "https://api.themoviedb.org/3"
 
     def validate(self) -> None:
@@ -45,11 +47,12 @@ class TMDBClient:
         return self._get(f"/tv/{tmdb_id}/season/{season_number}", {"language": "zh-CN"})
 
     def _get(self, path: str, params: dict | None = None) -> dict:
+        request_params = {**self.auth_params, **(params or {})}
         try:
             response = self.session.get(
                 f"{self.base_url}{path}",
                 headers=self.headers,
-                params=params,
+                params=request_params,
                 timeout=self.timeout,
             )
             response.raise_for_status()
@@ -60,3 +63,7 @@ class TMDBClient:
 
 def _tmdb_media_type(media_type: str) -> str:
     return {"Movie": "movie", "Episode": "tv"}.get(media_type, media_type)
+
+
+def _looks_like_v4_token(api_token: str) -> bool:
+    return api_token.startswith("eyJ") or "." in api_token
