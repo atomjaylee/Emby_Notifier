@@ -37,7 +37,7 @@ class TelegramNotifier:
     def send_aggregated_media(self, media: AggregatedMediaDetail) -> None:
         caption = self._build_caption(
             media.detail,
-            f"📌 已更新至 第{media.detail.tv_season}季 第{media.tv_episode_min}-{media.tv_episode_max}集 共{media.tv_episode_total}集\n",
+            _aggregated_episode_text(media),
             title=media.detail.media_name,
             approximate_size=True,
         )
@@ -52,7 +52,7 @@ class TelegramNotifier:
     ) -> str:
         if episode_text is None:
             episode_text = (
-                f"📌 已更新至 第{media.tv_season}季 第{media.tv_episode}集\n"
+                _single_episode_text(media)
                 if media.media_type == "Episode"
                 else ""
             )
@@ -103,3 +103,28 @@ def _format_size(size_gb: float) -> str:
 
 def _preview_image(media: MediaDetail) -> str:
     return media.media_still or media.media_backdrop or media.media_poster
+
+
+def _single_episode_text(media: MediaDetail) -> str:
+    if media.tv_episode is None:
+        return ""
+    if media.tv_season_episode_count:
+        return f"📌 更新进度：{media.tv_episode}/{media.tv_season_episode_count}\n"
+    return f"📌 已更新至 第{media.tv_season}季 第{media.tv_episode}集\n"
+
+
+def _aggregated_episode_text(media: AggregatedMediaDetail) -> str:
+    season_total = media.detail.tv_season_episode_count
+    if season_total:
+        if (
+            media.tv_episode_min <= 1
+            and media.tv_episode_max >= season_total
+            and media.tv_episode_total >= season_total
+        ):
+            return f"📌 已完结 · 全{season_total}集\n"
+        return f"📌 更新进度：{min(media.tv_episode_max, season_total)}/{season_total}\n"
+
+    return (
+        f"📌 已更新至 第{media.detail.tv_season}季 "
+        f"第{media.tv_episode_min}-{media.tv_episode_max}集 共{media.tv_episode_total}集\n"
+    )

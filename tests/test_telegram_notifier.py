@@ -37,7 +37,7 @@ def movie_detail():
     )
 
 
-def episode_detail():
+def episode_detail(total_episodes=40):
     return MediaDetail(
         server_type="Emby",
         server_name="Home",
@@ -52,6 +52,7 @@ def episode_detail():
         media_still="https://image.tmdb.org/t/p/w500/still.jpg",
         tv_season=1,
         tv_episode=2,
+        tv_season_episode_count=total_episodes,
         tv_episode_name="Preparing to Live",
         technical_info=MediaTechnicalInfo(
             quality="4K",
@@ -114,13 +115,13 @@ def test_send_episode_includes_season_episode_text():
 
     assert client.photos[0]["photo"] == "https://image.tmdb.org/t/p/w500/still.jpg"
     assert "📺 剧集入库" in client.photos[0]["caption"]
-    assert "📌 已更新至 第1季 第2集" in client.photos[0]["caption"]
+    assert "📌 更新进度：2/40" in client.photos[0]["caption"]
     assert "Preparing to Live" in client.photos[0]["caption"]
     assert "🧩 画质：4K · HDR10" in client.photos[0]["caption"]
     assert "评分" not in client.photos[0]["caption"]
 
 
-def test_send_aggregated_episode_uses_range_text():
+def test_send_aggregated_episode_uses_progress_text():
     client = FakeTelegramClient()
     notifier = TelegramNotifier(client)
     aggregated = AggregatedMediaDetail(
@@ -133,5 +134,39 @@ def test_send_aggregated_episode_uses_range_text():
 
     notifier.send_aggregated_media(aggregated)
 
-    assert "📌 已更新至 第1季 第2-4集 共3集" in client.photos[0]["caption"]
+    assert "📌 更新进度：4/40" in client.photos[0]["caption"]
+    assert "第2-4集 共3集" not in client.photos[0]["caption"]
     assert "💾 大小：约 3.42 GB/集" in client.photos[0]["caption"]
+
+
+def test_send_aggregated_episode_shows_completed_when_full_season_arrives():
+    client = FakeTelegramClient()
+    notifier = TelegramNotifier(client)
+    aggregated = AggregatedMediaDetail(
+        detail=episode_detail(),
+        tv_episode_min=1,
+        tv_episode_max=40,
+        tv_episode_total=40,
+        tv_episode_list=tuple(range(1, 41)),
+    )
+
+    notifier.send_aggregated_media(aggregated)
+
+    assert "📌 已完结 · 全40集" in client.photos[0]["caption"]
+    assert "1/40" not in client.photos[0]["caption"]
+
+
+def test_send_aggregated_episode_falls_back_to_range_without_tmdb_total():
+    client = FakeTelegramClient()
+    notifier = TelegramNotifier(client)
+    aggregated = AggregatedMediaDetail(
+        detail=episode_detail(total_episodes=None),
+        tv_episode_min=2,
+        tv_episode_max=4,
+        tv_episode_total=3,
+        tv_episode_list=(2, 3, 4),
+    )
+
+    notifier.send_aggregated_media(aggregated)
+
+    assert "📌 已更新至 第1季 第2-4集 共3集" in client.photos[0]["caption"]

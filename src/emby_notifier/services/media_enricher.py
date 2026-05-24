@@ -51,6 +51,7 @@ class MediaEnricher:
 
         poster = self._image_url(season_details.get("poster_path"))
         still = self._image_url(details.get("still_path")) or poster
+        season_episode_count = _season_episode_count(season_details)
 
         return MediaDetail(
             server_type=server.server_type,
@@ -66,6 +67,7 @@ class MediaEnricher:
             media_still=still,
             tv_season=details.get("season_number", season_number),
             tv_episode=details.get("episode_number", episode_number),
+            tv_season_episode_count=season_episode_count,
             tv_episode_name=details.get("name", ""),
         )
 
@@ -80,3 +82,16 @@ class MediaEnricher:
         if not path:
             return ""
         return f"{self.tmdb.image_domain}/t/p/w500{path}"
+
+
+def _season_episode_count(season_details: dict) -> int | None:
+    episodes = season_details.get("episodes")
+    if isinstance(episodes, list) and episodes:
+        return len(episodes)
+    count = season_details.get("episode_count")
+    if count is None:
+        return None
+    try:
+        return int(count)
+    except (TypeError, ValueError):
+        return None
