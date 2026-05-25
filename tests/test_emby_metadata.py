@@ -136,6 +136,29 @@ def test_emby_technical_enricher_reports_no_independent_subtitle_without_subtitl
     assert info.subtitle == "无独立字幕"
 
 
+def test_emby_technical_enricher_reads_item_level_media_streams_when_source_has_none():
+    item = {
+        "Path": "/media/Fearless.2006.1080p.mkv",
+        "MediaSources": [
+            {
+                "Size": 8589934592,
+                "Path": "/media/Fearless.2006.1080p.mkv",
+            }
+        ],
+        "MediaStreams": [
+            {"Type": "Video", "Width": 1920, "Height": 1080, "VideoRange": "SDR"},
+            {"Type": "Subtitle", "Language": "chi", "Codec": "srt", "DisplayTitle": "简中 SRT"},
+        ],
+    }
+
+    info = EmbyTechnicalEnricher(FakeEmbyClient(item)).get_info("movie-4")
+
+    assert info.quality == "1080p"
+    assert info.dynamic_range == "SDR"
+    assert info.subtitle == "简中"
+    assert info.size_gb == 8
+
+
 def test_emby_technical_enricher_falls_back_to_tmdb_id_lookup():
     item = {
         "Path": "/media/[ADWeb] Happening.2021.2160p.HDR.mkv",

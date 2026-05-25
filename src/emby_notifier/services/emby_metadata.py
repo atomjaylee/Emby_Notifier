@@ -22,8 +22,8 @@ class EmbyTechnicalEnricher:
     def get_info(self, item_id: str, tmdb_id: str | None = None) -> MediaTechnicalInfo:
         item = self._get_item(item_id, tmdb_id)
         media_source = _first_media_source(item)
-        video_stream = _first_stream(media_source, "Video")
-        subtitle_streams = _streams(media_source, "Subtitle")
+        video_stream = _first_stream(media_source, "Video") or _first_stream(item, "Video")
+        subtitle_streams = _streams(media_source, "Subtitle") or _streams(item, "Subtitle")
 
         return MediaTechnicalInfo(
             quality=_quality(video_stream),

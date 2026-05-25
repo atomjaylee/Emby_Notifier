@@ -34,7 +34,7 @@ def test_get_item_uses_items_query_with_media_fields():
             {
                 "api_key": "secret",
                 "Ids": "420180",
-                "Fields": "MediaSources,Path,ProviderIds",
+                "Fields": "MediaSources,MediaStreams,Path,ProviderIds",
             },
             7,
         )
@@ -56,7 +56,7 @@ def test_find_item_by_tmdb_id_uses_provider_id_lookup():
                 "Recursive": "true",
                 "IncludeItemTypes": "Movie,Episode",
                 "AnyProviderIdEquals": "tmdb.438631",
-                "Fields": "MediaSources,Path,ProviderIds",
+                "Fields": "MediaSources,MediaStreams,Path,ProviderIds",
             },
             7,
         )

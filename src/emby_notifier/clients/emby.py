@@ -3,7 +3,7 @@ from __future__ import annotations
 import requests
 
 
-MEDIA_FIELDS = "MediaSources,Path,ProviderIds"
+MEDIA_FIELDS = "MediaSources,MediaStreams,Path,ProviderIds"
 
 
 class EmbyClientError(RuntimeError):
