@@ -89,7 +89,18 @@ def test_processor_sends_movie_immediately():
     assert notifier.media[0].media_name == "Dune"
 
 
-def test_processor_enriches_movie_technical_info_before_sending():
+class ImmediateTimer:
+    """Timer that fires the callback immediately for testing."""
+    def __init__(self, delay, fn, args=(), kwargs=None):
+        self.daemon = False
+        self._fn = fn
+        self._args = args
+
+    def start(self):
+        self._fn(*self._args)
+
+
+def test_processor_delays_movie_send_with_technical_enricher():
     notifier = FakeNotifier()
     technical_enricher = FakeTechnicalEnricher()
     processor = Processor(
@@ -97,6 +108,39 @@ def test_processor_enriches_movie_technical_info_before_sending():
         notifier,
         FakeBuffer(),
         technical_enricher=technical_enricher,
+        movie_notify_delay=60,
+        timer_factory=ImmediateTimer,
+    )
+    raw = json.dumps({
+        "Title": "New movie",
+        "Event": "library.new",
+        "Server": {"Name": "Home", "Version": "4.8.0.80"},
+        "Item": {
+            "Type": "Movie",
+            "Id": "movie-1",
+            "Name": "Dune",
+            "PremiereDate": "2021-09-15T00:00:00.0000000Z",
+            "ProviderIds": {"Tmdb": "438631"},
+        },
+    })
+
+    result = processor.process_raw_message(raw)
+
+    assert result == "delayed"
+    assert technical_enricher.item_ids == ["movie-1"]
+    assert technical_enricher.tmdb_ids == ["438631"]
+    assert notifier.media[0].media_name == "Dune"
+
+
+def test_processor_sends_movie_immediately_when_delay_is_zero():
+    notifier = FakeNotifier()
+    technical_enricher = FakeTechnicalEnricher()
+    processor = Processor(
+        FakeEnricher(),
+        notifier,
+        FakeBuffer(),
+        technical_enricher=technical_enricher,
+        movie_notify_delay=0,
     )
     raw = json.dumps({
         "Title": "New movie",
@@ -115,7 +159,7 @@ def test_processor_enriches_movie_technical_info_before_sending():
 
     assert result == "media"
     assert technical_enricher.item_ids == ["movie-1"]
-    assert technical_enricher.tmdb_ids == ["438631"]
+    assert notifier.media[0].media_name == "Dune"
 
 
 def test_processor_buffers_episode():

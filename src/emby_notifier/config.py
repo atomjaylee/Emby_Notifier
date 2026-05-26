@@ -24,6 +24,7 @@ class AppConfig:
     emby_server_url: str | None
     emby_api_key: str | None
     emby_api_timeout: int
+    movie_notify_delay: int
 
 
 def _required(name: str, errors: list[str]) -> str:
@@ -68,6 +69,7 @@ def load_config() -> AppConfig:
         emby_server_url=_optional_url("EMBY_SERVER_URL"),
         emby_api_key=os.getenv("EMBY_API_KEY") or None,
         emby_api_timeout=_int_env("EMBY_API_TIMEOUT", 5),
+        movie_notify_delay=_int_env("MOVIE_NOTIFY_DELAY", 60),
     )
 
 

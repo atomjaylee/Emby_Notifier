@@ -26,7 +26,11 @@ class EmbyTechnicalEnricher:
         for attempt in range(self.retry_count + 1):
             info = self._read_info(item_id, tmdb_id)
             if _has_core_technical_info(info) or attempt >= self.retry_count:
+                if self.logger and attempt > 0:
+                    self.logger.debug(f"Technical info ready after {attempt + 1} attempts")
                 return info
+            if self.logger:
+                self.logger.debug(f"Technical info not ready, retry {attempt + 1}/{self.retry_count}")
             if self.retry_delay_seconds > 0:
                 time.sleep(self.retry_delay_seconds)
         return info

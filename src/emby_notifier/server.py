@@ -26,13 +26,19 @@ async def worker(msg_queue: asyncio.Queue, processor, logger) -> None:
 
 
 async def handle_post(request: web.Request) -> web.Response:
+    logger = request.app.get("logger")
     if request.content_type != "application/json":
+        if logger:
+            logger.warning(f"Rejected webhook from {request.remote} with content type {request.content_type}")
         return web.Response(
             status=415,
             text="Unsupported content type. Please use application/json.",
         )
 
-    await request.app["msg_queue"].put(await request.text())
+    raw = await request.text()
+    if logger:
+        logger.info(f"Webhook received from {request.remote}: {request.content_type}, {len(raw)} bytes")
+    await request.app["msg_queue"].put(raw)
     return web.Response(status=200)
 
 
@@ -40,6 +46,7 @@ async def run_server(config, processor, logger) -> None:
     msg_queue: asyncio.Queue = asyncio.Queue()
     app = web.Application()
     app["msg_queue"] = msg_queue
+    app["logger"] = logger
     app.router.add_post("/", handle_post)
 
     worker_task = asyncio.create_task(worker(msg_queue, processor, logger))

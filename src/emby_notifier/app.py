@@ -61,6 +61,7 @@ async def async_main() -> None:
         episode_buffer,
         logger=logger,
         technical_enricher=technical_enricher,
+        movie_notify_delay=config.movie_notify_delay,
     )
     await run_server(config, processor, logger)
 
