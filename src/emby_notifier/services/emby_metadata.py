@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import time
 
 from emby_notifier.domain.media import MediaDetail, MediaTechnicalInfo
 
 
 class EmbyTechnicalEnricher:
-    def __init__(self, emby_client, logger=None):
+    def __init__(self, emby_client, logger=None, retry_count: int = 3, retry_delay_seconds: float = 2):
         self.emby_client = emby_client
         self.logger = logger
+        self.retry_count = retry_count
+        self.retry_delay_seconds = retry_delay_seconds
 
     def enrich(self, detail: MediaDetail, item_id: str, tmdb_id: str | None = None) -> MediaDetail:
         try:
@@ -20,9 +23,18 @@ class EmbyTechnicalEnricher:
         return replace(detail, technical_info=info)
 
     def get_info(self, item_id: str, tmdb_id: str | None = None) -> MediaTechnicalInfo:
+        for attempt in range(self.retry_count + 1):
+            info = self._read_info(item_id, tmdb_id)
+            if _has_core_technical_info(info) or attempt >= self.retry_count:
+                return info
+            if self.retry_delay_seconds > 0:
+                time.sleep(self.retry_delay_seconds)
+        return info
+
+    def _read_info(self, item_id: str, tmdb_id: str | None = None) -> MediaTechnicalInfo:
         item = self._get_item(item_id, tmdb_id)
         media_source = _first_media_source(item)
-        video_stream = _first_stream(media_source, "Video") or _first_stream(item, "Video")
+        video_stream = _first_stream(media_source, "Video") or _first_stream(item, "Video") or _item_video_info(item)
         subtitle_streams = _streams(media_source, "Subtitle") or _streams(item, "Subtitle")
 
         return MediaTechnicalInfo(
@@ -59,6 +71,16 @@ def _streams(media_source: dict, stream_type: str) -> list[dict]:
 def _first_stream(media_source: dict, stream_type: str) -> dict:
     streams = _streams(media_source, stream_type)
     return streams[0] if streams else {}
+
+
+def _item_video_info(item: dict) -> dict:
+    if item.get("Width") or item.get("Height"):
+        return item
+    return {}
+
+
+def _has_core_technical_info(info: MediaTechnicalInfo) -> bool:
+    return any((info.quality, info.dynamic_range, info.size_gb))
 
 
 def _quality(video_stream: dict) -> str | None:
